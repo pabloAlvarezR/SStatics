@@ -69,7 +69,7 @@ export function GameCoverImage({
     <>
       {!loaded && (
         <div
-          className={`steam-shimmer flex items-center justify-center ${fillClass} ${className}`}
+          className={`pointer-events-none steam-shimmer flex items-center justify-center ${fillClass} ${className}`}
           aria-hidden
         >
           <LoadingSpinner size="sm" />

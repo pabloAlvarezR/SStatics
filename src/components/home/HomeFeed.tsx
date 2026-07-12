@@ -94,10 +94,7 @@ export function HomeFeed({ initialData, userName }: HomeFeedProps) {
           </Link>
         </div>
       ) : (
-        <section className="relative space-y-5">
-          {isFetching && !isLoading && (
-            <LoadingOverlay message="Actualizando resumen..." />
-          )}
+        <section className="space-y-5">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-lg font-semibold text-steam-text sm:text-xl">
@@ -151,7 +148,7 @@ function RecentGameCard({ game }: { game: FeedResponse["games"][number] }) {
           className="transition-transform duration-500 group-hover:scale-105"
           sizes="(max-width: 640px) 100vw, 208px"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-steam-bg-medium/90 via-transparent to-transparent sm:bg-gradient-to-r" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-steam-bg-medium/90 via-transparent to-transparent sm:bg-gradient-to-r" />
       </div>
 
       <div className="flex flex-1 flex-col justify-between gap-4 p-5">

@@ -4,7 +4,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { LibraryView } from "@/components/library/LibraryView";
-import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { LoadingPanel } from "@/components/ui/LoadingPanel";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { SyncProgressBar } from "@/components/ui/SyncProgressBar";
@@ -67,7 +66,8 @@ export function LibraryGrid({ initialData, initialScanUsage, serverDefaults }: L
     queryKey: ["library"],
     queryFn: fetchLibrary,
     initialData,
-    staleTime: 0,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   });
 
   const refreshLibrary = useCallback(async () => {
@@ -117,7 +117,6 @@ export function LibraryGrid({ initialData, initialScanUsage, serverDefaults }: L
   }, [data.needsSync, autoSyncAttempted, isSyncing, handleSync]);
 
   const games = data.games;
-  const showLibraryDuringSync = isSyncing && games.length > 0;
 
   return (
     <div className="space-y-6">
@@ -213,8 +212,8 @@ export function LibraryGrid({ initialData, initialScanUsage, serverDefaults }: L
         </div>
       )}
 
-      {showLibraryDuringSync && (
-        <div className="relative space-y-4">
+      {games.length > 0 && (
+        <div className="space-y-3">
           <LibraryView games={games} serverDefaults={serverDefaults} />
           {isFetching && (
             <div className="flex items-center gap-2 text-xs text-steam-text-muted sm:text-sm">
@@ -223,17 +222,6 @@ export function LibraryGrid({ initialData, initialScanUsage, serverDefaults }: L
             </div>
           )}
         </div>
-      )}
-
-      {games.length > 0 && isFetching && !isSyncing && (
-        <div className="relative">
-          <LibraryView games={games} serverDefaults={serverDefaults} />
-          <LoadingOverlay message="Actualizando biblioteca..." />
-        </div>
-      )}
-
-      {games.length > 0 && !isFetching && !showLibraryDuringSync && (
-        <LibraryView games={games} serverDefaults={serverDefaults} />
       )}
     </div>
   );

@@ -13,7 +13,7 @@ export function SparklineChart({ data }: SparklineChartProps) {
   }
 
   return (
-    <div className="h-10 w-full">
+    <div className="pointer-events-none h-10 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
           <Line

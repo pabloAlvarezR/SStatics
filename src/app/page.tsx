@@ -1,11 +1,13 @@
 import Link from "next/link";
 import Image from "next/image";
+import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
+import { isSafeCallbackPath } from "@/lib/auth-callback";
 import { HomeFeed } from "@/components/home/HomeFeed";
 import { getRecentGamesFeed } from "@/services/feed.service";
 
 interface HomeProps {
-  searchParams: Promise<{ error?: string; invite?: string }>;
+  searchParams: Promise<{ error?: string; invite?: string; loginRequired?: string; callbackUrl?: string }>;
 }
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -17,10 +19,19 @@ const ERROR_MESSAGES: Record<string, string> = {
 function LandingPage({
   errorMessage,
   inviteCode,
+  loginRequired,
+  callbackUrl,
 }: {
   errorMessage: string | null;
   inviteCode?: string;
+  loginRequired?: boolean;
+  callbackUrl?: string;
 }) {
+  const safeCallback = isSafeCallbackPath(callbackUrl ?? null) ? callbackUrl : null;
+  const loginHref = safeCallback
+    ? `/api/auth/steam?callbackUrl=${encodeURIComponent(safeCallback)}`
+    : "/api/auth/steam";
+
   return (
     <div className="flex flex-col items-center">
       <section className="flex w-full max-w-4xl flex-col items-center py-12 text-center sm:py-20">
@@ -54,6 +65,12 @@ function LandingPage({
           </div>
         )}
 
+        {loginRequired && (
+          <div className="mt-6 w-full max-w-md rounded border border-steam-link/30 bg-steam-link/10 px-4 py-3 text-sm text-steam-link">
+            Inicia sesión con Steam para acceder a esa página.
+          </div>
+        )}
+
         {errorMessage && (
           <div className="mt-6 w-full max-w-md rounded border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
             {errorMessage}
@@ -61,7 +78,7 @@ function LandingPage({
         )}
 
         <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row">
-          <Link href="/api/auth/steam" className="steam-btn-primary min-w-[220px] text-base">
+          <Link href={loginHref} className="steam-btn-primary min-w-[220px] text-base">
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
             </svg>
@@ -113,11 +130,23 @@ export default async function Home({ searchParams }: HomeProps) {
   const params = await searchParams;
 
   if (session?.user?.id) {
+    const callback = params.callbackUrl;
+    if (isSafeCallbackPath(callback)) {
+      redirect(callback);
+    }
+
     const feed = await getRecentGamesFeed(session.user.id);
     return <HomeFeed initialData={feed} userName={session.user.name} />;
   }
 
   const errorMessage = params.error ? ERROR_MESSAGES[params.error] : null;
 
-  return <LandingPage errorMessage={errorMessage} inviteCode={params.invite} />;
+  return (
+    <LandingPage
+      errorMessage={errorMessage}
+      inviteCode={params.invite}
+      loginRequired={params.loginRequired === "1"}
+      callbackUrl={params.callbackUrl}
+    />
+  );
 }

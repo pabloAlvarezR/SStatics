@@ -11,7 +11,7 @@ interface GamePageProps {
 export default async function GamePage({ params }: GamePageProps) {
   const session = await auth();
   if (!session?.user?.id) {
-    redirect("/");
+    redirect("/?loginRequired=1");
   }
 
   const { appId: appIdParam } = await params;

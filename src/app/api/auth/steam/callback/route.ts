@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { signIn } from "@/lib/auth";
+import { AUTH_CALLBACK_COOKIE, isSafeCallbackPath } from "@/lib/auth-callback";
 import { createSteamLoginProof } from "@/lib/steam-login-proof";
 import { verifySteamLogin } from "@/lib/steam-openid";
 
@@ -17,11 +18,14 @@ export async function GET(request: NextRequest) {
     return Response.redirect(new URL("/?error=steam_verification_failed", request.url));
   }
 
+  const callbackCookie = request.cookies.get(AUTH_CALLBACK_COOKIE)?.value;
+  const redirectTo = isSafeCallbackPath(callbackCookie) ? callbackCookie : "/library";
+
   // signIn lanza NEXT_REDIRECT en éxito — no capturar ese error
   const loginProof = await createSteamLoginProof(steamId);
   return signIn("steam", {
     steamId,
     loginProof,
-    redirectTo: "/library",
+    redirectTo,
   });
 }
