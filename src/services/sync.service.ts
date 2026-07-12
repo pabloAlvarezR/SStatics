@@ -1,7 +1,5 @@
 import { prisma, ensureSqliteOptimizations } from "@/lib/prisma";
-import type { Prisma } from "@prisma/client";
-import { SYNC_COOLDOWN_MS } from "@/lib/constants";
-import { SYNC_BATCH_SIZE } from "@/lib/constants";
+import { SYNC_CHUNK_SIZE, SYNC_COOLDOWN_MS } from "@/lib/constants";
 import {
   getCaptureDate,
   getPreviousCaptureDate,
@@ -28,12 +26,25 @@ export class SyncError extends Error {
   }
 }
 
+type SyncDb = Pick<typeof prisma, "game" | "playtimeSnapshot" | "user">;
+
+export interface SyncLibraryResult {
+  gamesCount: number;
+  syncedAt: Date | null;
+  done: boolean;
+  processed: number;
+  total: number;
+}
+
 export async function syncUserLibrary(
   userId: string,
   steamId: string,
-  options: { force?: boolean } = {},
-): Promise<{ gamesCount: number; syncedAt: Date }> {
+  options: { force?: boolean; offset?: number; limit?: number } = {},
+): Promise<SyncLibraryResult> {
   await ensureSqliteOptimizations();
+
+  const offset = Math.max(0, options.offset ?? 0);
+  const limit = Math.max(1, options.limit ?? SYNC_CHUNK_SIZE);
 
   const user = await prisma.user.findUnique({ where: { id: userId } });
 
@@ -44,7 +55,7 @@ export async function syncUserLibrary(
   const userTier = (user as { tier?: string }).tier ?? "free";
   const isOwner = isOwnerTier(userTier);
 
-  if (!options.force && !isOwner && user.lastSyncAt) {
+  if (offset === 0 && !options.force && !isOwner && user.lastSyncAt) {
     const elapsed = Date.now() - user.lastSyncAt.getTime();
     if (elapsed < SYNC_COOLDOWN_MS) {
       const remainingMin = Math.ceil((SYNC_COOLDOWN_MS - elapsed) / 60000);
@@ -78,33 +89,43 @@ export async function syncUserLibrary(
   const syncedAt = new Date();
   const captureDate = getCaptureDate(syncedAt);
   const trackedAppIds = await getTrackedAppIds(userId);
-  let newGamesCount = 0;
+  const slice = games.slice(offset, offset + limit);
 
-  await prisma.$transaction(async (tx) => {
-    for (let i = 0; i < games.length; i += SYNC_BATCH_SIZE) {
-      const batch = games.slice(i, i + SYNC_BATCH_SIZE);
-
-      for (const game of batch) {
-        const isNewGame = !trackedAppIds.has(game.appid);
-        if (isNewGame) newGamesCount++;
-        await upsertGameSnapshot(tx, userId, game, syncedAt, captureDate, isNewGame);
-      }
+  for (const game of slice) {
+    const isNewGame = !trackedAppIds.has(game.appid);
+    await upsertGameSnapshot(prisma, userId, game, syncedAt, captureDate, isNewGame);
+    if (isNewGame) {
+      trackedAppIds.add(game.appid);
     }
+  }
 
-    await tx.user.update({
+  const processedInChunk = slice.length;
+  const nextOffset = offset + processedInChunk;
+  const done = nextOffset >= games.length;
+
+  if (done) {
+    await prisma.user.update({
       where: { id: userId },
       data: { lastSyncAt: syncedAt },
     });
-  });
+    console.log(`[Sync] ${games.length} juegos guardados para userId ${userId}`);
+  } else {
+    console.log(
+      `[Sync] Chunk ${offset}-${nextOffset}/${games.length} para userId ${userId}`,
+    );
+  }
 
-  console.log(
-    `[Sync] ${games.length} juegos guardados para userId ${userId} (${newGamesCount} nuevos con origen 0h)`,
-  );
-  return { gamesCount: games.length, syncedAt };
+  return {
+    gamesCount: games.length,
+    syncedAt: done ? syncedAt : null,
+    done,
+    processed: processedInChunk,
+    total: games.length,
+  };
 }
 
 async function upsertGameSnapshot(
-  tx: Prisma.TransactionClient,
+  db: SyncDb,
   userId: string,
   game: {
     appid: number;
@@ -122,7 +143,7 @@ async function upsertGameSnapshot(
   const playtimeMinutes = game.playtime_forever ?? 0;
   const playtime2weeksMinutes = game.playtime_2weeks ?? null;
 
-  await tx.game.upsert({
+  await db.game.upsert({
     where: { appId: game.appid },
     create: {
       appId: game.appid,
@@ -143,7 +164,7 @@ async function upsertGameSnapshot(
     previousCapturedAt.setUTCDate(previousCapturedAt.getUTCDate() - 1);
     previousCapturedAt.setUTCHours(12, 0, 0, 0);
 
-    await tx.playtimeSnapshot.upsert({
+    await db.playtimeSnapshot.upsert({
       where: {
         userId_appId_captureDate: {
           userId,
@@ -163,7 +184,7 @@ async function upsertGameSnapshot(
     });
   }
 
-  await tx.playtimeSnapshot.upsert({
+  await db.playtimeSnapshot.upsert({
     where: {
       userId_appId_captureDate: {
         userId,
@@ -245,9 +266,7 @@ export async function syncSingleGame(
   const trackedAppIds = await getTrackedAppIds(userId);
   const isNewGame = !trackedAppIds.has(appId);
 
-  await prisma.$transaction(async (tx) => {
-    await upsertGameSnapshot(tx, userId, game, syncedAt, captureDate, isNewGame);
-  });
+  await upsertGameSnapshot(prisma, userId, game, syncedAt, captureDate, isNewGame);
 
   await recordGameScan(userId, appId, syncedAt);
 
@@ -273,7 +292,16 @@ export async function syncAllUsers(): Promise<number> {
   let synced = 0;
   for (const user of users) {
     try {
-      await syncUserLibrary(user.id, user.steamId, { force: true });
+      let offset = 0;
+      let done = false;
+      while (!done) {
+        const result = await syncUserLibrary(user.id, user.steamId, {
+          force: true,
+          offset,
+        });
+        offset += result.processed;
+        done = result.done;
+      }
       synced++;
     } catch {
       // Skip users that fail

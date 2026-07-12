@@ -8,8 +8,9 @@ import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { LoadingPanel } from "@/components/ui/LoadingPanel";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { useScanUsage } from "@/hooks/useScanUsage";
+import { runChunkedLibrarySync } from "@/lib/sync-client";
 import { formatScanButtonSubtext } from "@/lib/tier";
-import type { LibraryResponse, ScanUsage, SyncResponse } from "@/lib/validators/api";
+import type { LibraryResponse, ScanUsage } from "@/lib/validators/api";
 
 interface LibraryGridProps {
   initialData: LibraryResponse;
@@ -38,15 +39,6 @@ async function fetchLibrary(): Promise<LibraryResponse> {
   return res.json();
 }
 
-async function runSync(): Promise<SyncResponse> {
-  const res = await fetch("/api/sync", { method: "POST" });
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.error ?? "Error al sincronizar");
-  }
-  return data;
-}
-
 export function LibraryGrid({ initialData, initialScanUsage, serverDefaults }: LibraryGridProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -70,7 +62,12 @@ export function LibraryGrid({ initialData, initialScanUsage, serverDefaults }: L
     setSyncMessage({ type: "info", text: "Sincronizando con Steam..." });
 
     try {
-      const result = await runSync();
+      const result = await runChunkedLibrarySync((processed, total) => {
+        setSyncMessage({
+          type: "info",
+          text: `Sincronizando con Steam (${processed}/${total})...`,
+        });
+      });
       setSyncMessage({ type: "success", text: result.message ?? "Sincronizado" });
       await queryClient.invalidateQueries({ queryKey: ["library"] });
       await queryClient.invalidateQueries({ queryKey: ["stats"] });
@@ -174,17 +171,15 @@ export function LibraryGrid({ initialData, initialScanUsage, serverDefaults }: L
         </div>
       )}
 
-      {games.length > 0 && (
+      {games.length > 0 && isFetching && !isSyncing && (
         <div className="relative">
           <LibraryView games={games} serverDefaults={serverDefaults} />
-          {(isSyncing || isFetching) && (
-            <LoadingOverlay
-              message={
-                isSyncing ? "Sincronizando biblioteca..." : "Actualizando biblioteca..."
-              }
-            />
-          )}
+          <LoadingOverlay message="Actualizando biblioteca..." />
         </div>
+      )}
+
+      {games.length > 0 && !isFetching && (
+        <LibraryView games={games} serverDefaults={serverDefaults} />
       )}
     </div>
   );

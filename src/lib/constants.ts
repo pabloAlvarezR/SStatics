@@ -1,6 +1,9 @@
 /** Tamaño de lote para escrituras masivas en sync */
 export const SYNC_BATCH_SIZE = 100;
 
+/** Juegos por petición de sync en serverless (evita timeout y transacciones largas) */
+export const SYNC_CHUNK_SIZE = 40;
+
 /** Cooldown entre sincronizaciones manuales (5 minutos) */
 export const SYNC_COOLDOWN_MS = 5 * 60 * 1000;
 

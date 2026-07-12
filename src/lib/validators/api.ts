@@ -3,8 +3,11 @@ import { z } from "zod";
 export const syncResponseSchema = z.object({
   success: z.boolean(),
   gamesCount: z.number(),
-  syncedAt: z.string(),
+  syncedAt: z.string().optional(),
   message: z.string().optional(),
+  done: z.boolean(),
+  processed: z.number().optional(),
+  total: z.number().optional(),
 });
 
 export const scanUsageSchema = z.object({

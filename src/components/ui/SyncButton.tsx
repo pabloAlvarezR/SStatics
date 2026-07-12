@@ -6,7 +6,8 @@ import { useState } from "react";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { useScanUsage } from "@/hooks/useScanUsage";
 import { formatScanButtonSubtext } from "@/lib/tier";
-import type { ScanUsage, SyncResponse } from "@/lib/validators/api";
+import { runChunkedLibrarySync } from "@/lib/sync-client";
+import type { ScanUsage } from "@/lib/validators/api";
 
 interface SyncButtonProps {
   initialScanUsage?: ScanUsage;
@@ -21,14 +22,7 @@ export function SyncButton({ initialScanUsage }: SyncButtonProps) {
   );
 
   const mutation = useMutation({
-    mutationFn: async (): Promise<SyncResponse> => {
-      const res = await fetch("/api/sync", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error ?? "Error al sincronizar");
-      }
-      return data;
-    },
+    mutationFn: async () => runChunkedLibrarySync(),
     onSuccess: async (data) => {
       setMessage({ type: "success", text: data.message ?? "Sincronizado" });
       await queryClient.invalidateQueries({ queryKey: ["library"] });

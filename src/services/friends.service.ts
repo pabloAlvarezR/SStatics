@@ -39,22 +39,22 @@ export async function syncFriendsFromSteam(
   const summaryMap = new Map(summaries.map((s) => [s.steamid, s]));
   const now = new Date();
 
-  await prisma.$transaction(async (tx) => {
-    await tx.steamFriendCache.deleteMany({ where: { userId } });
+  await prisma.steamFriendCache.deleteMany({ where: { userId } });
 
-    for (const friend of friendList) {
-      const summary = summaryMap.get(friend.steamid);
-      await tx.steamFriendCache.create({
-        data: {
+  if (friendList.length > 0) {
+    await prisma.steamFriendCache.createMany({
+      data: friendList.map((friend) => {
+        const summary = summaryMap.get(friend.steamid);
+        return {
           userId,
           friendSteamId: friend.steamid,
           personaName: summary?.personaname ?? `Usuario ${friend.steamid.slice(-4)}`,
           avatarUrl: summary?.avatarfull ?? null,
           fetchedAt: now,
-        },
-      });
-    }
-  });
+        };
+      }),
+    });
+  }
 }
 
 async function enrichFriends(cached: Awaited<ReturnType<typeof getCachedFriends>>): Promise<Friend[]> {

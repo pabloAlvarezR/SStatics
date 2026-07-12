@@ -115,7 +115,7 @@ export function Ps1EasterEggs() {
                 ? "Crash Bandicoot · 1996"
                 : popup === "regina"
                   ? "Dino Crisis · 1999"
-                  : "Silent Bomber · 199"}
+                  : "Silent Bomber · 1999"}
             </p>
           </div>
         </div>

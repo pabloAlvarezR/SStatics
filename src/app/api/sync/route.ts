@@ -1,10 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { SYNC_CHUNK_SIZE } from "@/lib/constants";
 import { syncResponseSchema } from "@/lib/validators/api";
 import { SyncError, syncUserLibrary } from "@/services/sync.service";
 import { SteamApiError } from "@/services/steam.service";
 
-export async function POST() {
+export const maxDuration = 60;
+
+export async function POST(request: NextRequest) {
   try {
     const session = await auth();
 
@@ -12,16 +15,34 @@ export async function POST() {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
 
-    console.log(`[Sync] Iniciando sync para userId: ${session.user.id}`);
+    const offset = Math.max(0, Number(request.nextUrl.searchParams.get("offset") ?? "0"));
+    const limit = Math.max(
+      1,
+      Number(request.nextUrl.searchParams.get("limit") ?? String(SYNC_CHUNK_SIZE)),
+    );
 
-    const result = await syncUserLibrary(session.user.id, session.user.steamId);
+    console.log(
+      `[Sync] Chunk offset=${offset} limit=${limit} userId=${session.user.id}`,
+    );
+
+    const result = await syncUserLibrary(session.user.id, session.user.steamId, {
+      offset,
+      limit,
+    });
+
+    const processedSoFar = offset + result.processed;
 
     return NextResponse.json(
       syncResponseSchema.parse({
         success: true,
-        gamesCount: result.gamesCount,
-        syncedAt: result.syncedAt.toISOString(),
-        message: `${result.gamesCount} juegos sincronizados correctamente`,
+        gamesCount: result.total,
+        syncedAt: result.syncedAt?.toISOString(),
+        done: result.done,
+        processed: result.processed,
+        total: result.total,
+        message: result.done
+          ? `${result.total} juegos sincronizados correctamente`
+          : `Sincronizados ${processedSoFar} de ${result.total} juegos...`,
       }),
     );
   } catch (error) {

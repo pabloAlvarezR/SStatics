@@ -5,15 +5,12 @@ const globalForPrisma = globalThis as unknown as {
   prismaOptimized: boolean | undefined;
 };
 
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
-  });
+export const prisma = globalForPrisma.prisma ?? new PrismaClient({
+  log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+});
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+// Singleton en serverless (Vercel) para reutilizar conexiones entre invocaciones
+globalForPrisma.prisma = prisma;
 
 /** Aplica PRAGMAs de SQLite para mejor rendimiento en lecturas frecuentes */
 export async function ensureSqliteOptimizations(): Promise<void> {
