@@ -66,7 +66,9 @@ Monta en todas las páginas:
 
 **Archivo:** `src/middleware.ts`
 
-Prefijos que requieren sesión: `/library`, `/game`, `/friends`, `/profile`. Sin auth → redirect a `/`.
+Prefijos que requieren sesión: `/library`, `/game`, `/friends`, `/profile`. Sin JWT válido → redirect a `/`.
+
+El middleware usa `getToken` (`next-auth/jwt`), no importa `@/lib/auth`, para mantener el bundle Edge bajo el límite de 1 MB en Vercel Hobby.
 
 ## Por qué SQLite
 
