@@ -52,9 +52,11 @@ export async function POST(request: NextRequest) {
           ? 429
           : error.code === "PRIVATE_LIBRARY"
             ? 403
-            : error.code === "CONFIG"
-              ? 500
-              : 400;
+            : error.code === "SYNC_SESSION_EXPIRED"
+              ? 409
+              : error.code === "CONFIG"
+                ? 500
+                : 400;
       console.error(`[Sync] Error (${error.code}):`, error.message);
       return NextResponse.json({ error: error.message, code: error.code }, { status });
     }

@@ -9,6 +9,17 @@
 
 **Archivos:** `src/services/sync.service.ts`, `src/services/scan.service.ts`, `src/lib/constants.ts`, `src/lib/tier.ts`
 
+## Sync por chunks (serverless)
+
+La biblioteca completa se sincroniza en varias peticiones para evitar timeouts en Vercel:
+
+- `SYNC_CHUNK_SIZE` = 60 juegos por petición
+- `SYNC_PARALLEL_UPSERTS` = 8 escrituras en paralelo por chunk
+- **Caché temporal** (`SteamLibrarySyncCache`): en el chunk 0 se obtiene la lista de Steam una sola vez; los chunks siguientes reutilizan esa lista (TTL 30 min)
+- Cliente: `runChunkedLibrarySync()` en `src/lib/sync-client.ts` — barra de progreso y recarga incremental de la biblioteca tras cada chunk
+
+**Archivos:** `src/app/api/sync/route.ts`, `src/services/sync.service.ts`, `src/components/library/LibraryGrid.tsx`
+
 ## Snapshots diarios
 
 Steam solo expone horas totales actuales (`playtime_forever`). SStatics construye historial guardando **un snapshot por juego por día UTC**.
@@ -16,7 +27,7 @@ Steam solo expone horas totales actuales (`playtime_forever`). SStatics construy
 - Clave única: `userId + appId + captureDate` (`captureDate` = `YYYY-MM-DD`)
 - Re-sync el mismo día **actualiza** el snapshot, no duplica filas
 - **Juego nuevo detectado:** crea snapshot de ayer con 0 h y hoy con horas reales → el gráfico muestra la curva de entrada
-- Escritura en lotes de 100 (`SYNC_BATCH_SIZE`)
+- Escritura en chunks de 60 con upserts paralelos (`SYNC_CHUNK_SIZE`, `SYNC_PARALLEL_UPSERTS`)
 - Retención en BD: 10 años (`STORAGE_RETENTION_YEARS`), sin purga automática
 
 Ver modelo `PlaytimeSnapshot` en `base-de-datos.md`.
@@ -71,4 +82,5 @@ La asignación de tier ocurre en login (`resolveUserTier()` en `src/lib/tier.ts`
 | `PRIVATE_LIBRARY` | Biblioteca Steam privada | 403 |
 | Cooldown activo | Sync reciente | 429 |
 | Límite escaneos | Cuota diaria agotada | 429 |
+| `SYNC_SESSION_EXPIRED` | Caché de sync expirada entre chunks | 409 |
 | `GAME_NOT_FOUND` | Juego no en biblioteca del usuario | 404 |

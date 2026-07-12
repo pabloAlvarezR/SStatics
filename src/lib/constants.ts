@@ -2,7 +2,16 @@
 export const SYNC_BATCH_SIZE = 100;
 
 /** Juegos por petición de sync en serverless (evita timeout y transacciones largas) */
-export const SYNC_CHUNK_SIZE = 40;
+export const SYNC_CHUNK_SIZE = 60;
+
+/** Umbral para avisar de biblioteca grande en la UI */
+export const LARGE_LIBRARY_THRESHOLD = 100;
+
+/** TTL de la caché temporal de juegos Steam entre chunks (30 min) */
+export const SYNC_CACHE_TTL_MS = 30 * 60 * 1000;
+
+/** Upserts en paralelo por chunk */
+export const SYNC_PARALLEL_UPSERTS = 8;
 
 /** Cooldown entre sincronizaciones manuales (5 minutos) */
 export const SYNC_COOLDOWN_MS = 5 * 60 * 1000;

@@ -1,5 +1,11 @@
 import { prisma, ensureSqliteOptimizations } from "@/lib/prisma";
-import { SYNC_CHUNK_SIZE, SYNC_COOLDOWN_MS } from "@/lib/constants";
+import {
+  SYNC_CACHE_TTL_MS,
+  SYNC_CHUNK_SIZE,
+  SYNC_COOLDOWN_MS,
+  SYNC_PARALLEL_UPSERTS,
+} from "@/lib/constants";
+import { mapConcurrent } from "@/lib/map-concurrent";
 import {
   getCaptureDate,
   getPreviousCaptureDate,
@@ -19,14 +25,28 @@ export class SyncError extends Error {
       | "NOT_FOUND"
       | "CONFIG"
       | "SCAN_LIMIT"
-      | "GAME_NOT_FOUND",
+      | "GAME_NOT_FOUND"
+      | "SYNC_SESSION_EXPIRED",
   ) {
     super(message);
     this.name = "SyncError";
   }
 }
 
-type SyncDb = Pick<typeof prisma, "game" | "playtimeSnapshot" | "user">;
+type SteamOwnedGame = {
+  appid: number;
+  name?: string;
+  playtime_forever?: number;
+  playtime_2weeks?: number;
+  rtime_last_played?: number;
+  img_icon_url?: string;
+  img_logo_url?: string;
+};
+
+type SyncDb = Pick<
+  typeof prisma,
+  "game" | "playtimeSnapshot" | "user" | "steamLibrarySyncCache"
+>;
 
 export interface SyncLibraryResult {
   gamesCount: number;
@@ -34,6 +54,58 @@ export interface SyncLibraryResult {
   done: boolean;
   processed: number;
   total: number;
+}
+
+async function fetchAndCacheGames(userId: string, steamId: string): Promise<SteamOwnedGame[]> {
+  const games = await getOwnedGames(steamId);
+  const expiresAt = new Date(Date.now() + SYNC_CACHE_TTL_MS);
+
+  await prisma.steamLibrarySyncCache.upsert({
+    where: { userId },
+    create: { userId, gamesJson: JSON.stringify(games), expiresAt },
+    update: { gamesJson: JSON.stringify(games), expiresAt },
+  });
+
+  return games;
+}
+
+async function getCachedGames(userId: string): Promise<SteamOwnedGame[]> {
+  const cache = await prisma.steamLibrarySyncCache.findUnique({ where: { userId } });
+
+  if (!cache || cache.expiresAt < new Date()) {
+    throw new SyncError(
+      "La sincronización expiró. Pulsa «Sincronizar Steam» de nuevo para continuar.",
+      "SYNC_SESSION_EXPIRED",
+    );
+  }
+
+  return JSON.parse(cache.gamesJson) as SteamOwnedGame[];
+}
+
+async function clearSyncCache(userId: string): Promise<void> {
+  await prisma.steamLibrarySyncCache.deleteMany({ where: { userId } });
+}
+
+async function resolveGamesForChunk(
+  userId: string,
+  steamId: string,
+  offset: number,
+): Promise<SteamOwnedGame[]> {
+  if (offset === 0) {
+    try {
+      return await fetchAndCacheGames(userId, steamId);
+    } catch (error) {
+      if (error instanceof SteamApiError) {
+        if (error.message.includes("STEAM_API_KEY")) {
+          throw new SyncError(error.message, "CONFIG");
+        }
+        throw new SyncError(`Error al conectar con Steam: ${error.message}`, "STEAM_API");
+      }
+      throw error;
+    }
+  }
+
+  return getCachedGames(userId);
 }
 
 export async function syncUserLibrary(
@@ -66,20 +138,10 @@ export async function syncUserLibrary(
     }
   }
 
-  let games;
-  try {
-    games = await getOwnedGames(steamId);
-  } catch (error) {
-    if (error instanceof SteamApiError) {
-      if (error.message.includes("STEAM_API_KEY")) {
-        throw new SyncError(error.message, "CONFIG");
-      }
-      throw new SyncError(`Error al conectar con Steam: ${error.message}`, "STEAM_API");
-    }
-    throw error;
-  }
+  const games = await resolveGamesForChunk(userId, steamId, offset);
 
   if (games.length === 0) {
+    await clearSyncCache(userId);
     throw new SyncError(
       "No se encontraron juegos en tu biblioteca. Ve a Steam → Perfil → Editar perfil → Privacidad y pon «Detalles de los juegos» en Público.",
       "PRIVATE_LIBRARY",
@@ -91,13 +153,17 @@ export async function syncUserLibrary(
   const trackedAppIds = await getTrackedAppIds(userId);
   const slice = games.slice(offset, offset + limit);
 
-  for (const game of slice) {
-    const isNewGame = !trackedAppIds.has(game.appid);
-    await upsertGameSnapshot(prisma, userId, game, syncedAt, captureDate, isNewGame);
-    if (isNewGame) {
-      trackedAppIds.add(game.appid);
-    }
-  }
+  await mapConcurrent(
+    slice,
+    async (game) => {
+      const isNewGame = !trackedAppIds.has(game.appid);
+      await upsertGameSnapshot(prisma, userId, game, syncedAt, captureDate, isNewGame);
+      if (isNewGame) {
+        trackedAppIds.add(game.appid);
+      }
+    },
+    SYNC_PARALLEL_UPSERTS,
+  );
 
   const processedInChunk = slice.length;
   const nextOffset = offset + processedInChunk;
@@ -108,6 +174,7 @@ export async function syncUserLibrary(
       where: { id: userId },
       data: { lastSyncAt: syncedAt },
     });
+    await clearSyncCache(userId);
     console.log(`[Sync] ${games.length} juegos guardados para userId ${userId}`);
   } else {
     console.log(
@@ -127,15 +194,7 @@ export async function syncUserLibrary(
 async function upsertGameSnapshot(
   db: SyncDb,
   userId: string,
-  game: {
-    appid: number;
-    name?: string;
-    playtime_forever?: number;
-    playtime_2weeks?: number;
-    rtime_last_played?: number;
-    img_icon_url?: string;
-    img_logo_url?: string;
-  },
+  game: SteamOwnedGame,
   syncedAt: Date,
   captureDate: string,
   isNewGame: boolean,

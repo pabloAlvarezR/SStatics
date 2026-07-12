@@ -17,21 +17,29 @@ export function SyncButton({ initialScanUsage }: SyncButtonProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: scanUsage } = useScanUsage(initialScanUsage);
+  const [progress, setProgress] = useState<{ processed: number; total: number } | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(
     null,
   );
 
   const mutation = useMutation({
-    mutationFn: async () => runChunkedLibrarySync(),
+    mutationFn: async () =>
+      runChunkedLibrarySync({
+        onProgress: (processed, total) => setProgress({ processed, total }),
+        onChunkComplete: async () => {
+          await queryClient.invalidateQueries({ queryKey: ["library"] });
+        },
+      }),
     onSuccess: async (data) => {
+      setProgress(null);
       setMessage({ type: "success", text: data.message ?? "Sincronizado" });
-      await queryClient.invalidateQueries({ queryKey: ["library"] });
       await queryClient.invalidateQueries({ queryKey: ["feed"] });
       await queryClient.invalidateQueries({ queryKey: ["scans"] });
       router.refresh();
       setTimeout(() => setMessage(null), 6000);
     },
     onError: (error: Error) => {
+      setProgress(null);
       setMessage({ type: "error", text: error.message });
       setTimeout(() => setMessage(null), 8000);
     },
@@ -50,7 +58,9 @@ export function SyncButton({ initialScanUsage }: SyncButtonProps) {
         {mutation.isPending ? (
           <span className="flex items-center gap-2">
             <LoadingSpinner size="sm" />
-            <span>Sincronizando...</span>
+            <span>
+              {progress ? `${progress.processed}/${progress.total}` : "Sincronizando..."}
+            </span>
           </span>
         ) : (
           <>

@@ -7,7 +7,9 @@ import { LibraryView } from "@/components/library/LibraryView";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { LoadingPanel } from "@/components/ui/LoadingPanel";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { SyncProgressBar } from "@/components/ui/SyncProgressBar";
 import { useScanUsage } from "@/hooks/useScanUsage";
+import { LARGE_LIBRARY_THRESHOLD } from "@/lib/constants";
 import { runChunkedLibrarySync } from "@/lib/sync-client";
 import { formatScanButtonSubtext } from "@/lib/tier";
 import type { LibraryResponse, ScanUsage } from "@/lib/validators/api";
@@ -33,6 +35,14 @@ function formatRelativeTime(iso: string | null): string {
   return `Hace ${days}d`;
 }
 
+function estimateSyncMinutes(total: number): string {
+  if (total < LARGE_LIBRARY_THRESHOLD) return "menos de un minuto";
+  const chunks = Math.ceil(total / 60);
+  const seconds = chunks * 8;
+  if (seconds < 60) return "alrededor de 1 minuto";
+  return `1–${Math.ceil(seconds / 60)} minutos`;
+}
+
 async function fetchLibrary(): Promise<LibraryResponse> {
   const res = await fetch("/api/games", { cache: "no-store" });
   if (!res.ok) throw new Error("Error al cargar biblioteca");
@@ -48,6 +58,9 @@ export function LibraryGrid({ initialData, initialScanUsage, serverDefaults }: L
     text: string;
   } | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [syncProgress, setSyncProgress] = useState<{ processed: number; total: number } | null>(
+    null,
+  );
   const [autoSyncAttempted, setAutoSyncAttempted] = useState(false);
 
   const { data, isFetching, refetch } = useQuery<LibraryResponse>({
@@ -57,30 +70,44 @@ export function LibraryGrid({ initialData, initialScanUsage, serverDefaults }: L
     staleTime: 0,
   });
 
+  const refreshLibrary = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ["library"] });
+    await refetch();
+  }, [queryClient, refetch]);
+
   const handleSync = useCallback(async () => {
     setIsSyncing(true);
-    setSyncMessage({ type: "info", text: "Sincronizando con Steam..." });
+    setSyncProgress(null);
+    setSyncMessage({ type: "info", text: "Conectando con Steam..." });
 
     try {
-      const result = await runChunkedLibrarySync((processed, total) => {
-        setSyncMessage({
-          type: "info",
-          text: `Sincronizando con Steam (${processed}/${total})...`,
-        });
+      const result = await runChunkedLibrarySync({
+        onProgress: (processed, total) => {
+          setSyncProgress({ processed, total });
+          const hint =
+            total >= LARGE_LIBRARY_THRESHOLD
+              ? ` Puede tardar ${estimateSyncMinutes(total)}; los juegos aparecerán a medida que se importen.`
+              : "";
+          setSyncMessage({
+            type: "info",
+            text: `Importando juegos (${processed}/${total})...${hint}`,
+          });
+        },
+        onChunkComplete: refreshLibrary,
       });
       setSyncMessage({ type: "success", text: result.message ?? "Sincronizado" });
-      await queryClient.invalidateQueries({ queryKey: ["library"] });
       await queryClient.invalidateQueries({ queryKey: ["stats"] });
       await queryClient.invalidateQueries({ queryKey: ["scans"] });
-      await refetch();
+      await refreshLibrary();
       router.refresh();
     } catch (error) {
       const text = error instanceof Error ? error.message : "Error al sincronizar";
       setSyncMessage({ type: "error", text });
     } finally {
       setIsSyncing(false);
+      setSyncProgress(null);
     }
-  }, [queryClient, refetch, router]);
+  }, [queryClient, refreshLibrary, router]);
 
   useEffect(() => {
     if (data.needsSync && !autoSyncAttempted && !isSyncing) {
@@ -90,6 +117,7 @@ export function LibraryGrid({ initialData, initialScanUsage, serverDefaults }: L
   }, [data.needsSync, autoSyncAttempted, isSyncing, handleSync]);
 
   const games = data.games;
+  const showLibraryDuringSync = isSyncing && games.length > 0;
 
   return (
     <div className="space-y-6">
@@ -118,7 +146,9 @@ export function LibraryGrid({ initialData, initialScanUsage, serverDefaults }: L
           {isSyncing ? (
             <span className="flex items-center gap-2">
               <LoadingSpinner size="sm" />
-              Sincronizando...
+              {syncProgress
+                ? `${syncProgress.processed}/${syncProgress.total}`
+                : "Sincronizando..."}
             </span>
           ) : (
             <>
@@ -132,6 +162,18 @@ export function LibraryGrid({ initialData, initialScanUsage, serverDefaults }: L
           )}
         </button>
       </div>
+
+      {isSyncing && syncProgress && (
+        <div className="steam-panel px-4 py-4">
+          <SyncProgressBar processed={syncProgress.processed} total={syncProgress.total} />
+          {syncProgress.total >= LARGE_LIBRARY_THRESHOLD && (
+            <p className="mt-3 text-xs text-steam-text-muted sm:text-sm">
+              Biblioteca grande detectada ({syncProgress.total} juegos). Puedes seguir navegando;
+              los títulos se irán mostrando conforme se importen.
+            </p>
+          )}
+        </div>
+      )}
 
       {syncMessage && (
         <div
@@ -147,9 +189,9 @@ export function LibraryGrid({ initialData, initialScanUsage, serverDefaults }: L
         </div>
       )}
 
-      {isSyncing && games.length === 0 && (
+      {isSyncing && games.length === 0 && !syncProgress && (
         <div className="steam-panel">
-          <LoadingPanel message="Sincronizando tu biblioteca con Steam..." minHeight="min-h-64" />
+          <LoadingPanel message="Conectando con Steam e importando tu biblioteca..." minHeight="min-h-64" />
         </div>
       )}
 
@@ -171,6 +213,18 @@ export function LibraryGrid({ initialData, initialScanUsage, serverDefaults }: L
         </div>
       )}
 
+      {showLibraryDuringSync && (
+        <div className="relative space-y-4">
+          <LibraryView games={games} serverDefaults={serverDefaults} />
+          {isFetching && (
+            <div className="flex items-center gap-2 text-xs text-steam-text-muted sm:text-sm">
+              <LoadingSpinner size="xs" />
+              Actualizando lista de juegos...
+            </div>
+          )}
+        </div>
+      )}
+
       {games.length > 0 && isFetching && !isSyncing && (
         <div className="relative">
           <LibraryView games={games} serverDefaults={serverDefaults} />
@@ -178,7 +232,7 @@ export function LibraryGrid({ initialData, initialScanUsage, serverDefaults }: L
         </div>
       )}
 
-      {games.length > 0 && !isFetching && (
+      {games.length > 0 && !isFetching && !showLibraryDuringSync && (
         <LibraryView games={games} serverDefaults={serverDefaults} />
       )}
     </div>

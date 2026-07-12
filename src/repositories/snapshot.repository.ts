@@ -42,62 +42,53 @@ export async function getTrackedAppIds(userId: string): Promise<Set<number>> {
   return new Set(rows.map((r) => r.appId));
 }
 
-function toNumber(value: unknown): number {
-  if (value == null) return 0;
-  if (typeof value === "bigint") return Number(value);
-  if (typeof value === "number") return value;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-/** Último snapshot por juego — incluye juegos con 0 h */
+/** Último snapshot por juego — incluye juegos con 0 h (Prisma, compatible PG/SQLite) */
 export async function getLatestSnapshotsForLibrary(
   userId: string,
 ): Promise<LatestGameSnapshot[]> {
-  const rows = await prisma.$queryRaw<
-    {
-      appId: number;
-      name: string;
-      imgIconUrl: string | null;
-      imgLogoUrl: string | null;
-      playtimeMinutes: number | bigint;
-      playtime2weeksMinutes: number | bigint | null;
-      lastPlayedAt: Date | null;
-      capturedAt: Date;
-    }[]
-  >`
-    SELECT
-      g.appId,
-      g.name,
-      g.imgIconUrl,
-      g.imgLogoUrl,
-      ps.playtimeMinutes,
-      ps.playtime2weeksMinutes,
-      ps.lastPlayedAt,
-      ps.capturedAt
-    FROM PlaytimeSnapshot ps
-    INNER JOIN Game g ON g.appId = ps.appId
-    INNER JOIN (
-      SELECT appId, MAX(capturedAt) AS maxCaptured
-      FROM PlaytimeSnapshot
-      WHERE userId = ${userId}
-      GROUP BY appId
-    ) latest ON ps.appId = latest.appId AND ps.capturedAt = latest.maxCaptured
-    WHERE ps.userId = ${userId}
-    ORDER BY ps.playtimeMinutes DESC, g.name ASC
-  `;
+  const latestPerApp = await prisma.playtimeSnapshot.groupBy({
+    by: ["appId"],
+    where: { userId },
+    _max: { capturedAt: true },
+  });
 
-  return rows.map((row) => ({
-    appId: toNumber(row.appId),
-    name: row.name,
-    imgIconUrl: row.imgIconUrl,
-    imgLogoUrl: row.imgLogoUrl,
-    playtimeMinutes: toNumber(row.playtimeMinutes),
-    playtime2weeksMinutes:
-      row.playtime2weeksMinutes == null ? null : toNumber(row.playtime2weeksMinutes),
-    lastPlayedAt: row.lastPlayedAt,
-    capturedAt: row.capturedAt,
-  }));
+  if (latestPerApp.length === 0) return [];
+
+  const rows = await prisma.playtimeSnapshot.findMany({
+    where: {
+      userId,
+      OR: latestPerApp.map((entry) => ({
+        appId: entry.appId,
+        capturedAt: entry._max.capturedAt!,
+      })),
+    },
+    include: {
+      game: {
+        select: {
+          appId: true,
+          name: true,
+          imgIconUrl: true,
+          imgLogoUrl: true,
+        },
+      },
+    },
+  });
+
+  return rows
+    .map((row) => ({
+      appId: row.appId,
+      name: row.game.name,
+      imgIconUrl: row.game.imgIconUrl,
+      imgLogoUrl: row.game.imgLogoUrl,
+      playtimeMinutes: row.playtimeMinutes,
+      playtime2weeksMinutes: row.playtime2weeksMinutes,
+      lastPlayedAt: row.lastPlayedAt,
+      capturedAt: row.capturedAt,
+    }))
+    .sort(
+      (a, b) =>
+        b.playtimeMinutes - a.playtimeMinutes || a.name.localeCompare(b.name, "es"),
+    );
 }
 
 /** Historial completo para sparklines de biblioteca */
@@ -185,29 +176,22 @@ export async function getUserLatestSnapshots(userId: string) {
 export async function getAllUsersLibraryTotals(): Promise<
   { userId: string; totalMinutes: number; gameCount: number }[]
 > {
-  const rows = await prisma.$queryRaw<
-    { userId: string; totalMinutes: number | bigint; gameCount: number | bigint }[]
-  >`
-    SELECT
-      ps.userId,
-      SUM(ps.playtimeMinutes) AS totalMinutes,
-      COUNT(DISTINCT ps.appId) AS gameCount
-    FROM PlaytimeSnapshot ps
-    INNER JOIN (
-      SELECT userId, appId, MAX(capturedAt) AS maxCaptured
-      FROM PlaytimeSnapshot
-      GROUP BY userId, appId
-    ) latest ON ps.userId = latest.userId
-      AND ps.appId = latest.appId
-      AND ps.capturedAt = latest.maxCaptured
-    GROUP BY ps.userId
-  `;
+  const users = await prisma.user.findMany({
+    select: { id: true },
+  });
 
-  return rows.map((row) => ({
-    userId: row.userId,
-    totalMinutes: toNumber(row.totalMinutes),
-    gameCount: toNumber(row.gameCount),
-  }));
+  const totals = await Promise.all(
+    users.map(async (user) => {
+      const latest = await getLatestSnapshotsForLibrary(user.id);
+      return {
+        userId: user.id,
+        totalMinutes: latest.reduce((sum, g) => sum + g.playtimeMinutes, 0),
+        gameCount: latest.length,
+      };
+    }),
+  );
+
+  return totals.filter((t) => t.gameCount > 0);
 }
 
 export async function getUserHoursDelta(userId: string, daysAgo: number): Promise<number> {

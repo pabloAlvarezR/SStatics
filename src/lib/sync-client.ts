@@ -1,9 +1,20 @@
 import { SYNC_CHUNK_SIZE } from "@/lib/constants";
 import type { SyncResponse } from "@/lib/validators/api";
 
+export interface ChunkedSyncOptions {
+  onProgress?: (processed: number, total: number) => void;
+  onChunkComplete?: () => void | Promise<void>;
+}
+
 export async function runChunkedLibrarySync(
-  onProgress?: (processed: number, total: number) => void,
+  onProgressOrOptions?: ChunkedSyncOptions | ((processed: number, total: number) => void),
+  legacyOnChunkComplete?: () => void | Promise<void>,
 ): Promise<SyncResponse> {
+  const options: ChunkedSyncOptions =
+    typeof onProgressOrOptions === "function"
+      ? { onProgress: onProgressOrOptions, onChunkComplete: legacyOnChunkComplete }
+      : (onProgressOrOptions ?? {});
+
   let offset = 0;
 
   while (true) {
@@ -11,17 +22,17 @@ export async function runChunkedLibrarySync(
       `/api/sync?offset=${offset}&limit=${SYNC_CHUNK_SIZE}`,
       { method: "POST" },
     );
-    const data = (await res.json()) as SyncResponse & { error?: string };
+    const data = (await res.json()) as SyncResponse & { error?: string; code?: string };
 
     if (!res.ok) {
       throw new Error(data.error ?? "Error al sincronizar");
     }
 
-    const processedSoFar = offset + (data.processed ?? SYNC_CHUNK_SIZE);
-    onProgress?.(
-      Math.min(processedSoFar, data.total ?? data.gamesCount),
-      data.total ?? data.gamesCount,
-    );
+    const total = data.total ?? data.gamesCount;
+    const processedSoFar = Math.min(offset + (data.processed ?? 0), total);
+    options.onProgress?.(processedSoFar, total);
+
+    await options.onChunkComplete?.();
 
     if (data.done) {
       return data;

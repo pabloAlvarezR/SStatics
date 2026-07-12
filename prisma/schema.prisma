@@ -27,6 +27,7 @@ model User {
   friendCache        SteamFriendCache[]
   friendGameCache    SteamFriendGameCache[]
   gameScans          GameScan[]
+  librarySyncCache   SteamLibrarySyncCache?
 
   @@index([lastSyncAt])
 }
@@ -85,6 +86,16 @@ model SteamFriendGameCache {
 
   @@unique([userId, friendSteamId, appId])
   @@index([userId, appId, fetchedAt])
+}
+
+/// Cache temporal de biblioteca Steam entre chunks de sync (evita re-llamar a la API).
+model SteamLibrarySyncCache {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  gamesJson String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 /// Registro de escaneos individuales por juego (límite diario por tier).
