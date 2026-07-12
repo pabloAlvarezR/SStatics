@@ -1,0 +1,45 @@
+---
+description: Mantener documentación funcional actualizada en docs/
+alwaysApply: true
+---
+
+# Documentación del proyecto
+
+SStatics documenta cada funcionalidad en `docs/`. Consulta `docs/README.md` antes de cambios amplios.
+
+## Cuándo actualizar docs
+
+En la **misma tarea** en que cambies código, actualiza o crea el `.md` correspondiente si afectas a:
+
+- Rutas, páginas o flujos de usuario
+- Endpoints API o contratos Zod
+- Modelos Prisma, cachés o snapshots
+- Límites, tiers o constantes de negocio (`src/lib/constants.ts`)
+- Easter eggs PS1 (`docs/easter-eggs-ps1.md`)
+- Bugs corregidos con lecciones relevantes (añadir sección «Por qué» o «Bug corregido»)
+
+## Qué debe incluir cada documento
+
+1. **Qué hace** la funcionalidad (1 párrafo)
+2. **Archivos clave** (tabla ruta → rol)
+3. **Cómo funciona** el flujo (pasos o diagrama breve)
+4. **Por qué** decisiones no obvias (trade-offs, limitaciones)
+5. **Trampas conocidas** si las hay
+
+## Nuevas funcionalidades
+
+1. Implementar el código
+2. Crear `docs/<nombre-feature>.md` o ampliar el doc existente del dominio
+3. Añadir entrada en `docs/README.md` (índice y tabla «Si vas a tocar…»)
+4. Si es API nueva, documentar en `docs/api.md`
+
+## Estilo
+
+- Español, técnico y directo
+- Rutas de archivo relativas a la raíz del repo
+- Valores numéricos deben coincidir con `src/lib/constants.ts`
+- No duplicar el README de instalación; `docs/` es referencia funcional
+
+## Easter eggs y UI temática
+
+Cualquier cambio en `src/components/ps1/`, assets en `public/branding/` o estilos PS1 en `globals.css` requiere actualizar `docs/easter-eggs-ps1.md`.

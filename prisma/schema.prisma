@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String             @id @default(cuid())
+  steamId            String             @unique
+  personaName        String
+  avatarUrl          String?
+  profileUrl         String?
+  lastSyncAt         DateTime?
+  createdAt          DateTime           @default(now())
+  bio                String?
+  isProfilePublic    Boolean            @default(true)
+  defaultView        String             @default("grid")
+  gridDensity        String             @default("normal")
+  accentColor        String?
+  showStatsOnProfile Boolean            @default(true)
+  inviteCode         String             @unique @default(cuid())
+  tier               String             @default("free")
+  snapshots          PlaytimeSnapshot[]
+  friendCache        SteamFriendCache[]
+  friendGameCache    SteamFriendGameCache[]
+  gameScans          GameScan[]
+
+  @@index([lastSyncAt])
+}
+
+model Game {
+  appId       Int                @id
+  name        String
+  imgIconUrl  String?
+  imgLogoUrl  String?
+  snapshots   PlaytimeSnapshot[]
+}
+
+/// Un snapshot por juego por día por usuario (evita duplicados al re-sincronizar).
+model PlaytimeSnapshot {
+  id                    String    @id @default(cuid())
+  userId                String
+  appId                 Int
+  playtimeMinutes       Int
+  playtime2weeksMinutes Int?
+  lastPlayedAt          DateTime?
+  capturedAt            DateTime  @default(now())
+  /// Fecha UTC "YYYY-MM-DD" — clave de deduplicación diaria
+  captureDate           String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game                  Game      @relation(fields: [appId], references: [appId], onDelete: Cascade)
+
+  @@unique([userId, appId, captureDate])
+  @@index([userId, playtimeMinutes])
+  @@index([userId, appId, capturedAt])
+  @@index([userId, captureDate])
+}
+
+model SteamFriendCache {
+  id            String   @id @default(cuid())
+  userId        String
+  friendSteamId String
+  personaName   String
+  avatarUrl     String?
+  fetchedAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, friendSteamId])
+  @@index([userId, fetchedAt])
+}
+
+/// Cache de horas Steam por amigo+juego (evita golpear la API en cada visita).
+model SteamFriendGameCache {
+  id              String   @id @default(cuid())
+  userId          String
+  friendSteamId   String
+  appId           Int
+  playtimeMinutes Int?
+  hasData         Boolean  @default(false)
+  fetchedAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, friendSteamId, appId])
+  @@index([userId, appId, fetchedAt])
+}
+
+/// Registro de escaneos individuales por juego (límite diario por tier).
+model GameScan {
+  id        String   @id @default(cuid())
+  userId    String
+  appId     Int
+  scannedAt DateTime @default(now())
+  scanDate  String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, scanDate])
+}

@@ -1,0 +1,220 @@
+@import "tailwindcss";
+
+@theme {
+  --color-steam-bg-dark: #171a21;
+  --color-steam-bg-medium: #1b2838;
+  --color-steam-bg-light: #2a475e;
+  --color-steam-green: #a4d007;
+  --color-steam-green-dark: #5c7e10;
+  --color-steam-text: #c7d5e0;
+  --color-steam-text-muted: #8f98a0;
+  --color-steam-link: #66c0f4;
+  --color-steam-border: #3d5a73;
+  --font-sans: "Inter", "Segoe UI", system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-steam-bg-dark text-steam-text antialiased;
+    background-image:
+      radial-gradient(ellipse at 20% 0%, rgba(92, 126, 16, 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 100%, rgba(42, 71, 94, 0.15) 0%, transparent 50%);
+    min-height: 100vh;
+  }
+
+  .ps1-scanlines::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9998;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.03) 2px,
+      rgba(0, 0, 0, 0.03) 4px
+    );
+  }
+
+  ::selection {
+    @apply bg-steam-green/30 text-white;
+  }
+}
+
+@layer components {
+  .steam-panel {
+    @apply rounded-lg border border-steam-border/40 bg-steam-bg-medium/90 shadow-lg backdrop-blur-sm;
+  }
+
+  .steam-card {
+    @apply rounded-lg border border-steam-border/40 bg-steam-bg-medium/90 shadow-lg backdrop-blur-sm transition-all duration-200 hover:border-steam-green/30 hover:shadow-xl;
+  }
+
+  .steam-btn-primary {
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded px-5 py-2.5 text-sm font-semibold text-steam-bg-dark transition-all duration-200;
+    background: linear-gradient(180deg, #b8d926 0%, #a4d007 50%, #8fb806 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.25),
+      0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .steam-btn-primary:hover {
+    background: linear-gradient(180deg, #c4e32e 0%, #b0db0a 50%, #9cc408 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.3),
+      0 4px 12px rgba(164, 208, 7, 0.2);
+  }
+
+  .steam-btn-secondary {
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded border border-steam-border bg-steam-bg-light/50 px-5 py-2.5 text-sm font-medium text-steam-text transition-all duration-200 hover:border-steam-link/50 hover:bg-steam-bg-light;
+  }
+
+  .steam-badge {
+    @apply inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold uppercase tracking-wider;
+  }
+
+  .steam-tier-badge {
+    @apply inline-flex items-center rounded-full border border-steam-green/30 bg-steam-green/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-steam-green;
+  }
+
+  .steam-tier-badge-owner {
+    @apply inline-flex items-center rounded-full border border-amber-400/40 bg-amber-400/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-amber-300;
+  }
+
+  .steam-stat-card {
+    @apply rounded-xl border border-steam-border/30 bg-steam-bg-dark/40 p-4 transition-colors hover:border-steam-border/50 sm:p-5;
+  }
+
+  .steam-stat-label {
+    @apply text-[10px] font-semibold uppercase tracking-wider text-steam-text-muted sm:text-[11px];
+  }
+
+  .steam-stat-value {
+    @apply mt-2 text-xl font-bold tracking-tight text-steam-text sm:text-2xl;
+  }
+
+  .steam-stat-sub {
+    @apply mt-1 text-[10px] text-steam-text-muted sm:text-xs;
+  }
+
+  .steam-stat-trend {
+    @apply mt-1.5 text-[10px] font-medium sm:text-xs;
+  }
+
+  .steam-section-title {
+    @apply text-xs font-semibold uppercase tracking-wider text-steam-text-muted;
+  }
+
+  .steam-shimmer {
+    @apply relative overflow-hidden bg-steam-bg-light/30;
+  }
+
+  .steam-shimmer::after {
+    content: "";
+    @apply absolute inset-0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(164, 208, 7, 0.06) 50%,
+      transparent 100%
+    );
+    animation: shimmer 1.5s infinite;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* ── PS1 Easter eggs ── */
+
+@keyframes ps1-boot-fade-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes ps1-boot-logo {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) rotate(-8deg);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.08) rotate(2deg);
+  }
+  70% {
+    transform: scale(1) rotate(0deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes ps1-boot-exit {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes ps1-popup-in {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 12px) scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+.ps1-boot-overlay {
+  animation: ps1-boot-exit 0.6s ease-in 3.6s forwards;
+}
+
+.ps1-boot-sony {
+  animation: ps1-boot-fade-in 1.2s ease-out 0.3s both;
+}
+
+.ps1-boot-logo {
+  animation: ps1-boot-logo 1.4s cubic-bezier(0.34, 1.56, 0.64, 1) 1.1s both;
+}
+
+.ps1-boot-p {
+  transform: translate(-12px, 4px) skewX(-8deg);
+}
+
+.ps1-boot-s {
+  transform: translate(14px, -6px) skewX(-8deg);
+}
+
+.ps1-boot-tagline {
+  animation: ps1-boot-fade-in 0.8s ease-out 2.2s both;
+}
+
+.ps1-popup {
+  animation: ps1-popup-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.ps1-corner-egg:active {
+  transform: scale(0.95);
+}

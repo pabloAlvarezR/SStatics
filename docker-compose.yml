@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sstatics-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: sstatics
+      POSTGRES_PASSWORD: sstatics
+      POSTGRES_DB: sstatics
+    volumes:
+      - sstatics_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sstatics -d sstatics"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  sstatics_pg_data:
