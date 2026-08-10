@@ -30,6 +30,8 @@ React Query: `queryKey: ["game", appId]` con `initialData` del SSR.
 
 ## Comparación con amigos
 
+La UI muestra un **ranking compacto** de amigos con horas en el juego (ordenado por total), además de la lista de comparación/gráfico.
+
 ### Fuentes de horas
 
 | Fuente | Condición | Gráfico comparativo |

@@ -2,7 +2,15 @@ import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PROTECTED_PREFIXES = ["/library", "/game", "/friends", "/profile"];
+const PROTECTED_PREFIXES = [
+  "/library",
+  "/game",
+  "/friends",
+  "/profile",
+  "/leaderboard",
+  "/replay",
+  "/share",
+];
 
 const useSecureCookies = process.env.NODE_ENV === "production";
 const sessionCookieName = useSecureCookies
@@ -53,5 +61,8 @@ export const config = {
     "/games/:path*",
     "/friends/:path*",
     "/profile/:path*",
+    "/leaderboard/:path*",
+    "/replay/:path*",
+    "/share/:path*",
   ],
 };

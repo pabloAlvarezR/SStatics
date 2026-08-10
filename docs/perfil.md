@@ -32,12 +32,14 @@
 `/u/[steamId]` muestra:
 
 - Avatar, nombre, bio
+- Botón «Compartir perfil» (copia URL) + Open Graph
 - Stats (`StatsOverview`) solo si `showStatsOnProfile=true`
-- 404 si `isProfilePublic=false`
+- 404 si `isProfilePublic=false` (excepto si el visitante es **owner**, que puede ver perfiles privados para gestionar roles)
+- Control oculto `OwnerTierControls` solo para el owner visitante (ver `admin-y-tiers.md`)
 
 ## Tier y escaneos
 
-El perfil muestra badge de tier (`free`, `pro`, `master`, `owner`). El tier afecta límites de escaneo diario. Ver `sincronizacion-y-escaneos.md`.
+El perfil muestra badge de tier (`free`, `pro`, `master`, `owner`). El tier y el flag `unlimitedScans` afectan límites de escaneo diario. Ver `sincronizacion-y-escaneos.md` y `admin-y-tiers.md`.
 
 ## Invitación
 

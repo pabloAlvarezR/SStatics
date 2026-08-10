@@ -15,6 +15,7 @@ Cuenta vinculada a Steam.
 |-----------------|-----|
 | `steamId` | ID Steam (único) |
 | `tier` | `free` / `pro` / `master` / `owner` — límites de escaneo |
+| `unlimitedScans` | Si true, escaneos ilimitados sin ser owner (lo asigna el owner) |
 | `inviteCode` | Código de invitación único |
 | `isProfilePublic` | Perfil `/u/[steamId]` visible |
 | `showStatsOnProfile` | Stats en perfil público |

@@ -55,6 +55,12 @@ export async function SteamHeader() {
                 Amigos
               </Link>
               <Link
+                href="/leaderboard"
+                className="min-h-11 rounded px-2 py-2 text-xs font-medium text-steam-text-muted transition-colors hover:text-steam-link sm:px-3 sm:text-sm"
+              >
+                Ranking
+              </Link>
+              <Link
                 href="/profile"
                 className="hidden min-h-11 rounded px-3 py-2 text-sm font-medium text-steam-text-muted transition-colors hover:text-steam-link sm:block"
               >

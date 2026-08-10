@@ -76,6 +76,14 @@ export function HomeFeed({ initialData, userName }: HomeFeedProps) {
             </span>
           )}
         </p>
+        <div className="flex flex-wrap gap-2 pt-1">
+          <Link href="/share/week" className="steam-btn-secondary min-h-11 text-sm">
+            Compartir mi semana
+          </Link>
+          <Link href="/replay" className="steam-btn-secondary min-h-11 text-sm">
+            Replay del mes
+          </Link>
+        </div>
       </header>
 
       {isLoading ? (
@@ -120,14 +128,48 @@ export function HomeFeed({ initialData, userName }: HomeFeedProps) {
         </section>
       )}
 
-      <section className="grid gap-4 sm:grid-cols-3">
+      {data.friendActivity && data.friendActivity.length > 0 && (
+        <section className="steam-panel space-y-3 p-5">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-steam-text">Amigos esta semana</h2>
+              <p className="text-sm text-steam-text-muted">Horas ganadas en los últimos 7 días</p>
+            </div>
+            <Link href="/leaderboard" className="text-sm font-medium text-steam-link hover:underline">
+              Ver leaderboard →
+            </Link>
+          </div>
+          <ul className="space-y-2">
+            {data.friendActivity.map((friend) => (
+              <li key={friend.steamId}>
+                <Link
+                  href={`/u/${friend.steamId}`}
+                  className="flex min-h-11 items-center justify-between gap-3 rounded-lg px-2 py-2 hover:bg-steam-bg-light/30"
+                >
+                  <span className="truncate text-sm text-steam-text">{friend.personaName}</span>
+                  <span className="shrink-0 text-sm font-semibold text-steam-green">
+                    +{formatHours(friend.hoursGained7d)} h
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <QuickLink
           href="/library"
           title="Biblioteca"
           desc="Todos tus juegos con filtros y vistas"
         />
         <QuickLink href="/friends" title="Amigos" desc="Quién de tu lista usa SStatics" />
-        <QuickLink href="/profile" title="Perfil" desc="Personaliza tu cuenta" />
+        <QuickLink
+          href="/leaderboard"
+          title="Leaderboard"
+          desc="Horas ganadas esta semana entre amigos"
+        />
+        <QuickLink href="/replay" title="Replay" desc="Resumen del mes con tus snapshots" />
       </section>
     </div>
   );

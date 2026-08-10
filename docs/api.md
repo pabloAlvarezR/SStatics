@@ -36,6 +36,9 @@ Los contratos de respuesta están definidos en `src/lib/validators/api.ts` (Zod)
 | POST | `/api/friends` | Fuerza resync de amigos desde Steam |
 | GET | `/api/profile` | Perfil del usuario autenticado |
 | PATCH | `/api/profile` | Actualiza preferencias de perfil |
+| GET | `/api/leaderboard` | Ranking amigos (delta 7d) |
+| GET | `/api/admin/users/[steamId]` | Tier/unlimitedScans (solo owner) |
+| PATCH | `/api/admin/users/[steamId]` | Asigna free/pro/master y/o unlimitedScans (solo owner) |
 
 ## Stats y feed
 

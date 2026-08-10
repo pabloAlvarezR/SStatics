@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getCaptureDate } from "@/repositories/snapshot.repository";
-import { getScanLimitForTier, isOwnerTier } from "@/lib/tier";
+import { getScanLimitForTier, hasUnlimitedScans } from "@/lib/tier";
 
 export function getScanDate(date: Date = new Date()): string {
   return date.toISOString().split("T")[0];
@@ -14,11 +14,11 @@ export async function getDailyScanUsage(userId: string, date: Date = new Date())
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { tier: true },
+    select: { tier: true, unlimitedScans: true },
   });
 
-  const tier = (user as { tier?: string } | null)?.tier ?? "free";
-  const unlimited = isOwnerTier(tier);
+  const tier = user?.tier ?? "free";
+  const unlimited = hasUnlimitedScans(tier, user?.unlimitedScans ?? false);
   const limit = unlimited ? 0 : getScanLimitForTier(tier);
 
   return {
@@ -33,11 +33,11 @@ export async function getDailyScanUsage(userId: string, date: Date = new Date())
 export async function recordGameScan(userId: string, appId: number, scannedAt: Date = new Date()) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { tier: true },
+    select: { tier: true, unlimitedScans: true },
   });
 
-  const tier = (user as { tier?: string } | null)?.tier ?? "free";
-  if (isOwnerTier(tier)) return;
+  const tier = user?.tier ?? "free";
+  if (hasUnlimitedScans(tier, user?.unlimitedScans ?? false)) return;
 
   await prisma.gameScan.create({
     data: {

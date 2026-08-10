@@ -48,6 +48,7 @@ Límite diario por tier (`TIER_DAILY_SCANS` en `constants.ts`):
 | `pro` | 6 |
 | `master` | 15 |
 | `owner` | Ilimitado (no registra en `GameScan`) |
+| `unlimitedScans=true` | Ilimitado (sin poderes admin; lo asigna el owner) |
 
 La asignación de tier ocurre en login (`resolveUserTier()` en `src/lib/tier.ts`). El tier `owner` se asigna a cuentas específicas (p. ej. `batondejesus`).
 

@@ -23,6 +23,8 @@ model User {
   showStatsOnProfile Boolean            @default(true)
   inviteCode         String             @unique @default(cuid())
   tier               String             @default("free")
+  /// Cuota de escaneos ilimitada sin poderes de administración (solo owner puede asignarlo)
+  unlimitedScans     Boolean            @default(false)
   snapshots          PlaytimeSnapshot[]
   friendCache        SteamFriendCache[]
   friendGameCache    SteamFriendGameCache[]

@@ -24,8 +24,11 @@ Página (src/app/*/page.tsx)
 | `/library` | `library/page.tsx` + `library/*` | `chart.service`, `scan.service`, `stats.service` | `GET /api/games`, `POST /api/sync`, `GET /api/scans` |
 | `/game/[appId]` | `game/[appId]/page.tsx` + `game/*` | `chart.service`, `game-friends.service`, `scan.service` | `GET …/history`, `POST …/sync`, `GET …/friends` |
 | `/friends` | `friends/page.tsx` + `friends/*` | `friends.service` | `GET /api/friends` |
+| `/leaderboard` | `leaderboard/page.tsx` + `LeaderboardClient` | `leaderboard.service` | `GET /api/leaderboard` |
+| `/replay` | `replay/page.tsx` + `ReplayClient` | `replay.service` | — (SSR) |
+| `/share/week` | `share/week/page.tsx` + `WeekShareClient` | `replay.service` | — (SSR) |
 | `/profile` | `profile/page.tsx` + `profile/ProfileClient.tsx` | `stats.service` (+ Prisma en route) | `GET/PATCH /api/profile` |
-| `/u/[steamId]` | `u/[steamId]/page.tsx` | `stats.service` (`getPublicUserStats`) | — (solo SSR) |
+| `/u/[steamId]` | `u/[steamId]/page.tsx` (+ `OwnerTierControls`) | `stats.service`, `admin.service` | `PATCH /api/admin/users/[steamId]` |
 
 Referencia completa de contratos: [`api.md`](./api.md).
 
@@ -41,6 +44,10 @@ Referencia completa de contratos: [`api.md`](./api.md).
 | `feed.service.ts` | Feed de juegos recientes (home autenticado) |
 | `friends.service.ts` | Lista de amigos Steam + flag “está en SStatics” |
 | `game-friends.service.ts` | Comparación de horas con amigos en un juego |
+| `leaderboard.service.ts` | Ranking amigos por delta 7d |
+| `social.service.ts` | Snippets de actividad de amigos para el feed |
+| `replay.service.ts` | Replay mensual + share semanal |
+| `admin.service.ts` | Asignación de tiers por owner |
 | `steam-friend-game-cache.service.ts` | Caché de bibliotecas de amigos (TTL) |
 
 ## Lib denso (`src/lib/`)
@@ -59,6 +66,7 @@ Referencia completa de contratos: [`api.md`](./api.md).
 | `validators/api.ts` | Esquemas Zod de entrada/salida API |
 | `chart-merge.ts` | Fusionar series para gráficos multi-amigo |
 | `artificial-entry-snapshots.ts` | Detectar/omitir el snapshot artificial «ayer = 0 h» |
+| `leaderboard-rank.ts` | Ordenación pura del ranking de amigos |
 | `playtime-progress.ts` | Delta / tendencia entre puntos de gráfico |
 | `sync-client.ts` | Sync por chunks desde el cliente |
 | `map-concurrent.ts` | `map` con concurrencia limitada |
@@ -100,7 +108,9 @@ Cubren **lógica pura** en `lib/` y helpers exportados (p. ej. `minutesToHours`)
 
 | Test | Módulo real |
 |------|-------------|
-| `tier.test.ts` | `lib/tier.ts` + `constants` (límites de scan) |
+| `tier.test.ts` | `lib/tier.ts` + `constants` (límites / unlimitedScans) |
+| `leaderboard-rank.test.ts` | `lib/leaderboard-rank.ts` |
+| `admin-tier-schema.test.ts` | Zod admin tiers (free/pro/master, rechazo owner) |
 | `chart-merge.test.ts` | `lib/chart-merge.ts` |
 | `artificial-entry-snapshots.test.ts` | `lib/artificial-entry-snapshots.ts` |
 | `playtime-progress.test.ts` | `lib/playtime-progress.ts` |

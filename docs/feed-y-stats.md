@@ -10,9 +10,11 @@
 
 - Saludo según hora del día + nombre del usuario
 - Fecha actual y hora de última sync
+- CTAs «Compartir mi semana» y «Replay del mes»
 - Top **8 juegos** con `lastPlayedAt` más reciente
 - Por juego: cover, horas, sparkline, progreso, horas 2 semanas
-- Enlaces rápidos a biblioteca, amigos y perfil
+- Bloque «Amigos esta semana» (delta 7d de amigos con perfil público)
+- Enlaces rápidos a biblioteca, amigos, leaderboard y replay
 
 ### Datos
 

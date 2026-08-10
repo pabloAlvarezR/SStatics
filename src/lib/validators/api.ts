@@ -161,6 +161,91 @@ export const profileUpdateSchema = z.object({
   showStatsOnProfile: z.boolean().optional(),
 });
 
+export const adminUserTierUpdateSchema = z.object({
+  tier: z.enum(["free", "pro", "master"]).optional(),
+  unlimitedScans: z.boolean().optional(),
+}).refine((data) => data.tier !== undefined || data.unlimitedScans !== undefined, {
+  message: "Indica tier y/o unlimitedScans",
+});
+
+export const adminUserTierResponseSchema = z.object({
+  steamId: z.string(),
+  personaName: z.string(),
+  tier: z.string(),
+  unlimitedScans: z.boolean(),
+});
+
+export const leaderboardEntrySchema = z.object({
+  rank: z.number(),
+  steamId: z.string(),
+  personaName: z.string(),
+  avatarUrl: z.string().nullable(),
+  hoursGained7d: z.number(),
+  totalHours: z.number(),
+  isProfilePublic: z.boolean(),
+  isCurrentUser: z.boolean(),
+});
+
+export const leaderboardResponseSchema = z.object({
+  scope: z.literal("friends"),
+  entries: z.array(leaderboardEntrySchema),
+  generatedAt: z.string(),
+  inviteCode: z.string().nullable(),
+});
+
+export const friendActivityItemSchema = z.object({
+  steamId: z.string(),
+  personaName: z.string(),
+  avatarUrl: z.string().nullable(),
+  hoursGained7d: z.number(),
+});
+
+export const feedResponseSchema = z.object({
+  games: z.array(libraryGameSchema),
+  lastSyncAt: z.string().nullable(),
+  generatedAt: z.string(),
+  totalRecent: z.number(),
+  friendActivity: z.array(friendActivityItemSchema).optional(),
+});
+
+export const replayTopGameSchema = z.object({
+  appId: z.number(),
+  name: z.string(),
+  hoursGained: z.number(),
+  totalHours: z.number(),
+});
+
+export const replayResponseSchema = z.object({
+  year: z.number(),
+  month: z.number(),
+  label: z.string(),
+  hoursGained: z.number(),
+  prevMonthHoursGained: z.number().nullable(),
+  topGames: z.array(replayTopGameSchema),
+  mostActiveDay: z
+    .object({
+      date: z.string(),
+      hours: z.number(),
+    })
+    .nullable(),
+  gamesTouched: z.number(),
+  sharePath: z.string(),
+});
+
+export const weekShareResponseSchema = z.object({
+  hours7d: z.number(),
+  topGames: z.array(
+    z.object({
+      appId: z.number(),
+      name: z.string(),
+      totalHours: z.number(),
+    }),
+  ),
+  personaName: z.string(),
+  steamId: z.string(),
+  sharePath: z.string(),
+});
+
 export const friendSchema = z.object({
   steamId: z.string(),
   personaName: z.string(),
@@ -203,13 +288,6 @@ export const gameFriendsComparisonResponseSchema = z.object({
   steamRefreshPending: z.number().optional(),
 });
 
-export const feedResponseSchema = z.object({
-  games: z.array(libraryGameSchema),
-  lastSyncAt: z.string().nullable(),
-  generatedAt: z.string(),
-  totalRecent: z.number(),
-});
-
 export type ChartPoint = z.infer<typeof chartPointSchema>;
 export type GameHistory = z.infer<typeof gameHistorySchema>;
 export type LibraryGame = z.infer<typeof libraryGameSchema>;
@@ -220,9 +298,16 @@ export type SingleGameSyncResponse = z.infer<typeof singleGameSyncResponseSchema
 export type StatsResponse = z.infer<typeof statsResponseSchema>;
 export type ProfileResponse = z.infer<typeof profileResponseSchema>;
 export type ProfileUpdate = z.infer<typeof profileUpdateSchema>;
+export type AdminUserTierUpdate = z.infer<typeof adminUserTierUpdateSchema>;
+export type AdminUserTierResponse = z.infer<typeof adminUserTierResponseSchema>;
+export type LeaderboardEntry = z.infer<typeof leaderboardEntrySchema>;
+export type LeaderboardResponse = z.infer<typeof leaderboardResponseSchema>;
 export type Friend = z.infer<typeof friendSchema>;
 export type FriendsResponse = z.infer<typeof friendsResponseSchema>;
 export type GameFriendComparison = z.infer<typeof gameFriendComparisonSchema>;
 export type GameFriendsComparisonResponse = z.infer<typeof gameFriendsComparisonResponseSchema>;
 export type PlaytimeProgress = z.infer<typeof playtimeProgressSchema>;
 export type FeedResponse = z.infer<typeof feedResponseSchema>;
+export type FriendActivityItem = z.infer<typeof friendActivityItemSchema>;
+export type ReplayResponse = z.infer<typeof replayResponseSchema>;
+export type WeekShareResponse = z.infer<typeof weekShareResponseSchema>;

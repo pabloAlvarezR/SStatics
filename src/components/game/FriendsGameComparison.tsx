@@ -42,6 +42,13 @@ export function FriendsGameComparison({
 }: FriendsGameComparisonProps) {
   const atCompareLimit = selectedFriendSteamIds.length >= MAX_FRIENDS_CHART_COMPARE;
 
+  const rankedByHours = useMemo(() => {
+    if (!data) return [];
+    return [...data.friends]
+      .filter((f) => f.hasGameData && f.totalHours != null)
+      .sort((a, b) => (b.totalHours ?? 0) - (a.totalHours ?? 0));
+  }, [data]);
+
   if (isLoading) {
     return (
       <div className="steam-panel p-5 sm:p-8">
@@ -94,6 +101,30 @@ export function FriendsGameComparison({
         <p className="mt-3 text-xs text-steam-text-muted">
           Máximo {MAX_FRIENDS_CHART_COMPARE} amigos en el gráfico. Quita uno para añadir otro.
         </p>
+      )}
+
+      {rankedByHours.length > 0 && (
+        <div className="mt-5 rounded-lg border border-steam-border/30 bg-steam-bg-dark/40 px-3 py-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-steam-text-muted">
+            Ranking en este juego
+          </p>
+          <ol className="mt-2 space-y-1.5">
+            {rankedByHours.slice(0, 8).map((friend, index) => (
+              <li
+                key={friend.steamId}
+                className="flex items-center justify-between gap-2 text-sm"
+              >
+                <span className="min-w-0 truncate text-steam-text">
+                  <span className="mr-2 text-steam-text-muted">{index + 1}.</span>
+                  {friend.personaName}
+                </span>
+                <span className="shrink-0 font-semibold text-steam-green">
+                  {formatHours(friend.totalHours!)} h
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
       )}
 
       <div className="mt-5 space-y-3">

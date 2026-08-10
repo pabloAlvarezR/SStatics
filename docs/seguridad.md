@@ -27,7 +27,8 @@ Tras verificar OpenID en el callback, se genera un `loginProof` firmado con `AUT
 |--------|---------|
 | Auth en endpoints | Todos los `/api/*` de datos exigen `auth()` excepto auth, invite redirect y cron |
 | Validación Zod | Entrada/salida en rutas críticas (`src/lib/validators/api.ts`) |
-| Perfil PATCH | Solo campos permitidos en `profileUpdateSchema` — no se puede cambiar `tier` vía API |
+| Perfil PATCH | Solo campos permitidos en `profileUpdateSchema` — no se puede cambiar `tier` ni `unlimitedScans` vía perfil |
+| Admin tiers | `PATCH /api/admin/users/[steamId]` solo si el caller es owner; no permite asignar `owner` |
 | Errores genéricos | Mensajes 500 sin detalles internos al cliente |
 | Logs | No se loguea `steamId` en rutas de sync en producción |
 
@@ -71,6 +72,7 @@ En producción, define `OWNER_STEAM_IDS` con tu Steam ID real. Evita depender so
 OWNER_STEAM_IDS=76561198012345678
 ```
 
+El owner puede subir a otros a `free`/`pro`/`master` y marcar `unlimitedScans` desde un control oculto en `/u/{steamId}`. Ver `admin-y-tiers.md`.
 ## Checklist pre-alpha
 
 - [ ] `AUTH_SECRET` generado aleatoriamente (no el placeholder)
