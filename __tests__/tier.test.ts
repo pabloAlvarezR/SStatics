@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import { TIER_DAILY_SCANS } from "@/lib/constants";
 import { getScanLimitForTier } from "@/lib/tier";
 
-describe("daily scan limits", () => {
-  it("defines tier limits", () => {
+describe("getScanLimitForTier", () => {
+  it("defines tier limits from constants", () => {
     expect(TIER_DAILY_SCANS.free).toBe(3);
     expect(TIER_DAILY_SCANS.pro).toBe(6);
     expect(TIER_DAILY_SCANS.master).toBe(15);

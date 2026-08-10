@@ -6,11 +6,7 @@ import {
   SYNC_PARALLEL_UPSERTS,
 } from "@/lib/constants";
 import { mapConcurrent } from "@/lib/map-concurrent";
-import {
-  getCaptureDate,
-  getPreviousCaptureDate,
-  getTrackedAppIds,
-} from "@/repositories/snapshot.repository";
+import { getCaptureDate, purgeArtificialEntrySnapshots } from "@/repositories/snapshot.repository";
 import { getOwnedGames, SteamApiError } from "@/services/steam.service";
 import { getDailyScanUsage, recordGameScan } from "@/services/scan.service";
 import { isOwnerTier } from "@/lib/tier";
@@ -150,17 +146,17 @@ export async function syncUserLibrary(
 
   const syncedAt = new Date();
   const captureDate = getCaptureDate(syncedAt);
-  const trackedAppIds = await getTrackedAppIds(userId);
+
+  if (offset === 0) {
+    await purgeArtificialEntrySnapshots(userId);
+  }
+
   const slice = games.slice(offset, offset + limit);
 
   await mapConcurrent(
     slice,
     async (game) => {
-      const isNewGame = !trackedAppIds.has(game.appid);
-      await upsertGameSnapshot(prisma, userId, game, syncedAt, captureDate, isNewGame);
-      if (isNewGame) {
-        trackedAppIds.add(game.appid);
-      }
+      await upsertGameSnapshot(prisma, userId, game, syncedAt, captureDate);
     },
     SYNC_PARALLEL_UPSERTS,
   );
@@ -197,7 +193,6 @@ async function upsertGameSnapshot(
   game: SteamOwnedGame,
   syncedAt: Date,
   captureDate: string,
-  isNewGame: boolean,
 ) {
   const playtimeMinutes = game.playtime_forever ?? 0;
   const playtime2weeksMinutes = game.playtime_2weeks ?? null;
@@ -216,32 +211,6 @@ async function upsertGameSnapshot(
       imgLogoUrl: game.img_logo_url ?? null,
     },
   });
-
-  if (isNewGame) {
-    const previousDate = getPreviousCaptureDate(syncedAt);
-    const previousCapturedAt = new Date(syncedAt);
-    previousCapturedAt.setUTCDate(previousCapturedAt.getUTCDate() - 1);
-    previousCapturedAt.setUTCHours(12, 0, 0, 0);
-
-    await db.playtimeSnapshot.upsert({
-      where: {
-        userId_appId_captureDate: {
-          userId,
-          appId: game.appid,
-          captureDate: previousDate,
-        },
-      },
-      create: {
-        userId,
-        appId: game.appid,
-        playtimeMinutes: 0,
-        lastPlayedAt: null,
-        capturedAt: previousCapturedAt,
-        captureDate: previousDate,
-      },
-      update: { playtimeMinutes: 0 },
-    });
-  }
 
   await db.playtimeSnapshot.upsert({
     where: {
@@ -322,10 +291,9 @@ export async function syncSingleGame(
 
   const syncedAt = new Date();
   const captureDate = getCaptureDate(syncedAt);
-  const trackedAppIds = await getTrackedAppIds(userId);
-  const isNewGame = !trackedAppIds.has(appId);
 
-  await upsertGameSnapshot(prisma, userId, game, syncedAt, captureDate, isNewGame);
+  await purgeArtificialEntrySnapshots(userId, appId);
+  await upsertGameSnapshot(prisma, userId, game, syncedAt, captureDate);
 
   await recordGameScan(userId, appId, syncedAt);
 

@@ -1,3 +1,4 @@
+import { collectArtificialEntryIds, omitArtificialLeadingEntry } from "@/lib/artificial-entry-snapshots";
 import { prisma } from "@/lib/prisma";
 
 export interface LatestGameSnapshot {
@@ -14,6 +15,7 @@ export interface LatestGameSnapshot {
 export interface SnapshotPoint {
   appId: number;
   capturedAt: Date;
+  captureDate: string;
   playtimeMinutes: number;
   lastPlayedAt?: Date | null;
 }
@@ -26,20 +28,33 @@ export function getCaptureDate(date: Date = new Date()): string {
   return toUtcDateString(date);
 }
 
-export function getPreviousCaptureDate(date: Date = new Date()): string {
-  const previous = new Date(date);
-  previous.setUTCDate(previous.getUTCDate() - 1);
-  return toUtcDateString(previous);
-}
-
-/** AppIds que el usuario ya tiene en su historial */
-export async function getTrackedAppIds(userId: string): Promise<Set<number>> {
-  const rows = await prisma.playtimeSnapshot.findMany({
-    where: { userId },
-    select: { appId: true },
-    distinct: ["appId"],
+/**
+ * Elimina snapshots artificiales «ayer = 0 h» (patrón del sync antiguo).
+ * Idempotente; seguro llamarlo al leer biblioteca o al sincronizar.
+ */
+export async function purgeArtificialEntrySnapshots(
+  userId: string,
+  appId?: number,
+): Promise<number> {
+  const snapshots = await prisma.playtimeSnapshot.findMany({
+    where: {
+      userId,
+      ...(appId != null ? { appId } : {}),
+    },
+    select: { id: true, appId: true, captureDate: true, playtimeMinutes: true },
+    orderBy: [{ appId: "asc" }, { captureDate: "asc" }],
   });
-  return new Set(rows.map((r) => r.appId));
+
+  const idsToDelete = collectArtificialEntryIds(snapshots);
+  if (idsToDelete.length === 0) return 0;
+
+  await prisma.playtimeSnapshot.deleteMany({
+    where: { id: { in: idsToDelete } },
+  });
+  console.log(
+    `[Snapshots] Eliminados ${idsToDelete.length} artificiales (0 h de entrada) para userId ${userId}`,
+  );
+  return idsToDelete.length;
 }
 
 /** Último snapshot por juego — incluye juegos con 0 h (Prisma, compatible PG/SQLite) */
@@ -101,14 +116,23 @@ export async function getSparklineDataForLibrary(
 
   const rows = await prisma.playtimeSnapshot.findMany({
     where: { userId, appId: { in: appIds } },
-    select: { appId: true, capturedAt: true, playtimeMinutes: true },
-    orderBy: [{ appId: "asc" }, { capturedAt: "asc" }],
+    select: {
+      appId: true,
+      capturedAt: true,
+      captureDate: true,
+      playtimeMinutes: true,
+    },
+    orderBy: [{ appId: "asc" }, { captureDate: "asc" }],
   });
 
   for (const row of rows) {
     const list = result.get(row.appId) ?? [];
     list.push(row);
     result.set(row.appId, list);
+  }
+
+  for (const [appId, list] of result) {
+    result.set(appId, omitArtificialLeadingEntry(list));
   }
 
   return result;
@@ -119,16 +143,19 @@ export async function getGameSnapshotHistory(
   userId: string,
   appId: number,
 ): Promise<SnapshotPoint[]> {
-  return prisma.playtimeSnapshot.findMany({
+  const rows = await prisma.playtimeSnapshot.findMany({
     where: { userId, appId },
     select: {
       appId: true,
       capturedAt: true,
+      captureDate: true,
       playtimeMinutes: true,
       lastPlayedAt: true,
     },
-    orderBy: { capturedAt: "asc" },
+    orderBy: { captureDate: "asc" },
   });
+
+  return omitArtificialLeadingEntry(rows);
 }
 
 /** Historial de un juego para varios usuarios (comparación con amigos) */
@@ -145,10 +172,11 @@ export async function getGameSnapshotHistoryForUsers(
       userId: true,
       appId: true,
       capturedAt: true,
+      captureDate: true,
       playtimeMinutes: true,
       lastPlayedAt: true,
     },
-    orderBy: [{ userId: "asc" }, { capturedAt: "asc" }],
+    orderBy: [{ userId: "asc" }, { captureDate: "asc" }],
   });
 
   for (const row of rows) {
@@ -156,10 +184,15 @@ export async function getGameSnapshotHistoryForUsers(
     list.push({
       appId: row.appId,
       capturedAt: row.capturedAt,
+      captureDate: row.captureDate,
       playtimeMinutes: row.playtimeMinutes,
       lastPlayedAt: row.lastPlayedAt,
     });
     result.set(row.userId, list);
+  }
+
+  for (const [userId, list] of result) {
+    result.set(userId, omitArtificialLeadingEntry(list));
   }
 
   return result;
@@ -240,13 +273,22 @@ export async function getDailyActivityDeltas(
   const snapshots = await prisma.playtimeSnapshot.findMany({
     where: { userId, capturedAt: { gte: cutoff } },
     select: { appId: true, captureDate: true, playtimeMinutes: true },
-    orderBy: [{ captureDate: "asc" }, { appId: "asc" }],
+    orderBy: [{ appId: "asc" }, { captureDate: "asc" }],
   });
 
-  const byDateApp = new Map<string, Map<number, number>>();
+  const byApp = new Map<number, { captureDate: string; playtimeMinutes: number }[]>();
   for (const s of snapshots) {
-    if (!byDateApp.has(s.captureDate)) byDateApp.set(s.captureDate, new Map());
-    byDateApp.get(s.captureDate)!.set(s.appId, s.playtimeMinutes);
+    const list = byApp.get(s.appId) ?? [];
+    list.push({ captureDate: s.captureDate, playtimeMinutes: s.playtimeMinutes });
+    byApp.set(s.appId, list);
+  }
+
+  const byDateApp = new Map<string, Map<number, number>>();
+  for (const [appId, list] of byApp) {
+    for (const s of omitArtificialLeadingEntry(list)) {
+      if (!byDateApp.has(s.captureDate)) byDateApp.set(s.captureDate, new Map());
+      byDateApp.get(s.captureDate)!.set(appId, s.playtimeMinutes);
+    }
   }
 
   const dates = [...byDateApp.keys()].sort();

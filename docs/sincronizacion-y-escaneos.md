@@ -26,7 +26,8 @@ Steam solo expone horas totales actuales (`playtime_forever`). SStatics construy
 
 - Clave única: `userId + appId + captureDate` (`captureDate` = `YYYY-MM-DD`)
 - Re-sync el mismo día **actualiza** el snapshot, no duplica filas
-- **Juego nuevo detectado:** crea snapshot de ayer con 0 h y hoy con horas reales → el gráfico muestra la curva de entrada
+- **Juego nuevo detectado:** solo se guarda el snapshot del día actual con las horas reales de Steam (no se inventa un día previo a 0 h)
+- **Limpieza:** al sincronizar (biblioteca o escaneo), se eliminan snapshots artificiales antiguos (`ayer = 0 h` + día siguiente ya existente). Las lecturas de historial/sparklines también omiten ese punto, así el gráfico ya no lo muestra aunque aún no hayas sincronizado.
 - Escritura en chunks de 60 con upserts paralelos (`SYNC_CHUNK_SIZE`, `SYNC_PARALLEL_UPSERTS`)
 - Retención en BD: 10 años (`STORAGE_RETENTION_YEARS`), sin purga automática
 
@@ -58,7 +59,7 @@ La asignación de tier ocurre en login (`resolveUserTier()` en `src/lib/tier.ts`
 
 **Desarrollo local:** `node-cron` en `src/jobs/daily-sync.ts` (solo si `NODE_ENV=development` y no `VERCEL`).
 
-**Archivos:** `src/app/api/cron/sync/route.ts`, `src/jobs/daily-sync.ts`, `src/components/CronInitializer.tsx`, `vercel.json`
+**Archivos:** `src/app/api/cron/sync/route.ts`, `src/jobs/daily-sync.ts`, `src/components/layout/CronInitializer.tsx`, `vercel.json`
 
 - Llama `syncAllUsers({ force: true })` — ignora cooldown
 - No corre en `NODE_ENV === "test"`
@@ -84,3 +85,9 @@ La asignación de tier ocurre en login (`resolveUserTier()` en `src/lib/tier.ts`
 | Límite escaneos | Cuota diaria agotada | 429 |
 | `SYNC_SESSION_EXPIRED` | Caché de sync expirada entre chunks | 409 |
 | `GAME_NOT_FOUND` | Juego no en biblioteca del usuario | 404 |
+
+## Bug corregido: primer día a 0 h
+
+**Antes:** al detectar un juego nuevo se insertaba un snapshot de ayer con 0 h y otro de hoy con las horas reales, para forzar una «curva de entrada». Eso hacía que el gráfico bajara a 0 y subiera al día siguiente sin reflejar la realidad de Steam.
+
+**Ahora:** solo se guarda el día actual con `playtime_forever`. La sync (o un escaneo) purga esos puntos de la BD. Las queries de historial usan `omitArtificialLeadingEntry` para no mostrar el 0 h artificial en gráficos aunque la purga no se haya ejecutado aún.

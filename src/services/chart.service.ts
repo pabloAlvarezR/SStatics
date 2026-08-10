@@ -12,14 +12,14 @@ import { minutesToHours } from "@/services/steam.service";
 import { prisma } from "@/lib/prisma";
 
 function buildChartPoints(
-  snapshots: { capturedAt: Date; playtimeMinutes: number }[],
+  snapshots: { capturedAt: Date; captureDate?: string; playtimeMinutes: number }[],
 ): ChartPoint[] {
   const sorted = [...snapshots].sort(
     (a, b) => a.capturedAt.getTime() - b.capturedAt.getTime(),
   );
 
   return sorted.map((s) => ({
-    date: s.capturedAt.toISOString().split("T")[0],
+    date: s.captureDate ?? s.capturedAt.toISOString().split("T")[0],
     hours: minutesToHours(s.playtimeMinutes),
   }));
 }

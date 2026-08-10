@@ -89,7 +89,7 @@ OWNER_STEAM_IDS=76561198012345678
 | Sin rate limit en API propia | Aceptable para pocos usuarios | Middleware rate limit |
 | Steam API key en servidor | Estándar — nunca en cliente | Rotación periódica |
 | Neon free duerme | Primera request lenta tras inactividad | Upgrade o keep-alive |
-| SQLite local obsoleto | Solo PostgreSQL en prod | — |
+| Dual DB (SQLite/PG) | Prod siempre PostgreSQL; local puede usar SQLite | Ver `base-de-datos.md` |
 
 ## Reportar problemas
 

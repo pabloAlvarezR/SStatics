@@ -9,18 +9,18 @@
 | Estado cliente | TanStack React Query |
 | Gráficos | Recharts |
 | Auth | NextAuth v5 (JWT) |
-| Base de datos | Prisma + SQLite (WAL) |
+| Base de datos | Prisma — **PostgreSQL en prod** (Neon); local Postgres (Docker) o SQLite (`file:`) |
 | Validación API | Zod (`src/lib/validators/api.ts`) |
-| Tests | Vitest |
+| Tests | Vitest (lógica pura en `lib/`; ver `mapa-del-codigo.md`) |
 
 ## Estructura de carpetas
 
 ```
 src/
 ├── app/              # Páginas y API routes (App Router)
-├── components/       # UI por dominio (library, game, ps1, stats…)
+├── components/       # UI por dominio (layout, library, game, ps1, stats…)
 ├── hooks/            # Hooks React reutilizables
-├── jobs/             # Cron (sync diario)
+├── jobs/             # Cron local (sync diario)
 ├── lib/              # Auth, Prisma, constantes, utilidades
 ├── repositories/     # Queries SQL optimizadas (snapshots)
 ├── services/         # Lógica de negocio
@@ -28,8 +28,10 @@ src/
 docs/                 # Esta documentación
 prisma/               # Esquema, migraciones, seed
 public/branding/      # Logos y assets PS1
-scripts/              # Utilidades de mantenimiento
+scripts/              # Utilidades de mantenimiento (incl. sync-prisma-schema)
 ```
+
+Mapa página → service → API: [`mapa-del-codigo.md`](./mapa-del-codigo.md).
 
 ## Patrones de diseño
 
@@ -57,7 +59,7 @@ Cada ruta en `src/app/api/` parsea entrada/salida con esquemas Zod. Los tipos co
 Monta en todas las páginas:
 
 - `QueryProvider` — React Query
-- `CronInitializer` — arranca cron de sync diario
+- `CronInitializer` (`components/layout/`) — arranca cron de sync diario **solo en dev local**
 - `SteamHeader` — navegación
 - `Ps1Footer` + `Ps1EasterEggs` — homenaje PS1 (ver `easter-eggs-ps1.md`)
 - Clase `ps1-scanlines` en `<body>`
@@ -70,6 +72,14 @@ Prefijos que requieren sesión: `/library`, `/game`, `/friends`, `/profile`. Sin
 
 El middleware usa `getToken` (`next-auth/jwt`), no importa `@/lib/auth`, para mantener el bundle Edge bajo el límite de 1 MB en Vercel Hobby.
 
-## Por qué SQLite
+## Proveedor de base de datos
 
-Adecuado para desarrollo y despliegues single-instance. La lógica de servicios no depende del motor: cambiar `DATABASE_URL` a PostgreSQL no requiere reescribir servicios. Ver estimaciones de tamaño en `README.md`.
+La lógica de servicios **no** depende del motor. `scripts/sync-prisma-schema.mjs` fija el `provider` de Prisma según `DATABASE_URL` antes de `generate` / migrate:
+
+| Entorno | `DATABASE_URL` | Uso típico |
+|---------|----------------|------------|
+| Producción | `postgresql://…` (Neon) | Vercel — ver `despliegue.md` |
+| Local (recomendado) | Postgres vía `npm run db:setup` | Misma familia que prod |
+| Local (rápido) | `file:./dev.db` | SQLite sin Docker |
+
+Detalle de modelos y trampas: [`base-de-datos.md`](./base-de-datos.md).

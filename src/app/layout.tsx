@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import { SteamHeader } from "@/components/layout/SteamHeader";
 import { Ps1EasterEggs } from "@/components/ps1/Ps1EasterEggs";
 import { Ps1Footer } from "@/components/ps1/Ps1Footer";
-import { CronInitializer } from "@/components/CronInitializer";
+import { CronInitializer } from "@/components/layout/CronInitializer";
 import { QueryProvider } from "@/lib/query-client";
 import "@/styles/globals.css";
 
