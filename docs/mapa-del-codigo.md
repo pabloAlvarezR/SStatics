@@ -65,6 +65,7 @@ Referencia completa de contratos: [`api.md`](./api.md).
 | `prisma.ts` | Cliente Prisma (+ PRAGMAs si SQLite) |
 | `validators/api.ts` | Esquemas Zod de entrada/salida API |
 | `chart-merge.ts` | Fusionar series para gráficos multi-amigo |
+| `hours-range.ts` | Recortar puntos de gráfico a 7d / 1m / 6m |
 | `artificial-entry-snapshots.ts` | Detectar/omitir el snapshot artificial «ayer = 0 h» |
 | `leaderboard-rank.ts` | Ordenación pura del ranking de amigos |
 | `playtime-progress.ts` | Delta / tendencia entre puntos de gráfico |
@@ -98,7 +99,7 @@ En Vercel **no** corre node-cron dentro del layout.
 | `components/home/` | Feed autenticado |
 | `components/profile/` | Edición de perfil |
 | `components/stats/` | Cards, heatmap, top games |
-| `components/charts/` | Sparkline y gráfico de playtime |
+| `components/charts/` | Sparkline, gráfico de playtime y selector 7d/1m/6m |
 | `components/ps1/` | Easter eggs / UI nostálgica |
 | `components/ui/` | Spinners, sync button, avatares, covers |
 
@@ -112,6 +113,7 @@ Cubren **lógica pura** en `lib/` y helpers exportados (p. ej. `minutesToHours`)
 | `leaderboard-rank.test.ts` | `lib/leaderboard-rank.ts` |
 | `admin-tier-schema.test.ts` | Zod admin tiers (free/pro/master, rechazo owner) |
 | `chart-merge.test.ts` | `lib/chart-merge.ts` |
+| `hours-range.test.ts` | `lib/hours-range.ts` |
 | `artificial-entry-snapshots.test.ts` | `lib/artificial-entry-snapshots.ts` |
 | `playtime-progress.test.ts` | `lib/playtime-progress.ts` |
 | `steam-hours.test.ts` | `minutesToHours` en `steam.service.ts` |

@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { HoursRangeSelector } from "@/components/charts/HoursRangeSelector";
 import { SparklineChart } from "@/components/charts/SparklineChart";
 import { GameCoverImage } from "@/components/ui/GameCoverImage";
 import type { StatsResponse } from "@/lib/validators/api";
@@ -14,11 +17,14 @@ function formatHours(h: number): string {
 export function TopGamesRow({ games }: TopGamesRowProps) {
   return (
     <div className="steam-panel overflow-hidden">
-      <div className="border-b border-steam-border/30 px-5 py-4 sm:px-8">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-steam-text-muted">
-          Top 5 juegos
-        </h3>
-        <p className="mt-1 text-xs text-steam-text-muted">Por horas totales en tu biblioteca</p>
+      <div className="flex flex-col gap-3 border-b border-steam-border/30 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+        <div>
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-steam-text-muted">
+            Top 5 juegos
+          </h3>
+          <p className="mt-1 text-xs text-steam-text-muted">Por horas totales en tu biblioteca</p>
+        </div>
+        <HoursRangeSelector />
       </div>
 
       <div className="divide-y divide-steam-border/20">

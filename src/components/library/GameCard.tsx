@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import { SparklineChart } from "@/components/charts/SparklineChart";
+import { useRangedChartPoints } from "@/hooks/useHoursRange";
 import { ProgressBadge } from "@/components/stats/ProgressBadge";
 import { GameCoverImage } from "@/components/ui/GameCoverImage";
+import { MIN_SNAPSHOTS_FOR_CHART } from "@/lib/constants";
 import type { LibraryGame } from "@/lib/validators/api";
 
 interface GameCardProps {
@@ -19,6 +23,9 @@ function formatLastPlayed(iso: string | null): string {
 }
 
 export function GameCard({ game }: GameCardProps) {
+  const { points, progress } = useRangedChartPoints(game.sparkline);
+  const hasRangeChart = game.hasChartData && points.length >= MIN_SNAPSHOTS_FOR_CHART;
+
   return (
     <Link href={`/game/${game.appId}`} className="steam-card group block overflow-hidden">
       <div className="relative aspect-[460/215] w-full overflow-hidden bg-steam-bg-light/30">
@@ -50,8 +57,8 @@ export function GameCard({ game }: GameCardProps) {
             </p>
             <p className="text-xs text-steam-text-muted">horas totales</p>
           </div>
-          {game.hasChartData && game.progress && (
-            <ProgressBadge progress={game.progress} size="sm" />
+          {hasRangeChart && progress && (
+            <ProgressBadge progress={progress} size="sm" />
           )}
         </div>
 
@@ -59,7 +66,7 @@ export function GameCard({ game }: GameCardProps) {
           <p className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-steam-text-muted">
             Evolución
           </p>
-          {game.hasChartData ? (
+          {hasRangeChart ? (
             <SparklineChart data={game.sparkline} />
           ) : (
             <p className="text-[10px] text-steam-text-muted">

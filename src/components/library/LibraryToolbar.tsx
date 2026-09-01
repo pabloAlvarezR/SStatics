@@ -1,5 +1,6 @@
 "use client";
 
+import { HoursRangeSelector } from "@/components/charts/HoursRangeSelector";
 import type { LibraryPreferences } from "@/hooks/useLibraryPreferences";
 import type { GridDensity, ViewMode } from "@/hooks/useLibraryPreferences";
 
@@ -27,7 +28,8 @@ export function LibraryToolbar({
           className="min-h-11 w-full rounded border border-steam-border/50 bg-steam-bg-dark/50 px-4 py-2 text-sm text-steam-text placeholder:text-steam-text-muted focus:border-steam-green/50 focus:outline-none lg:max-w-xs"
         />
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto">
+          <HoursRangeSelector />
           <ViewToggle
             viewMode={prefs.viewMode}
             onChange={(viewMode) => onChange({ viewMode })}

@@ -4,14 +4,14 @@
 
 | Capa | Tecnología |
 |------|------------|
-| Framework | Next.js 15 (App Router) |
+| Framework | Next.js 15.5 (App Router) |
 | UI | React 19, Tailwind CSS 4 |
 | Estado cliente | TanStack React Query |
-| Gráficos | Recharts |
-| Auth | NextAuth v5 (JWT) |
-| Base de datos | Prisma — **PostgreSQL en prod** (Neon); local Postgres (Docker) o SQLite (`file:`) |
+| Gráficos | Recharts 3 |
+| Auth | NextAuth v5 (`5.0.0-beta.32`, JWT) |
+| Base de datos | Prisma 6 — **PostgreSQL en prod** (Neon); local Postgres (Docker) o SQLite (`file:`) |
 | Validación API | Zod (`src/lib/validators/api.ts`) |
-| Tests | Vitest (lógica pura en `lib/`; ver `mapa-del-codigo.md`) |
+| Tests | Vitest 4 (lógica pura en `lib/`; ver `mapa-del-codigo.md`) |
 
 ## Estructura de carpetas
 
@@ -27,6 +27,7 @@ src/
 └── styles/           # globals.css (tema Steam + PS1)
 docs/                 # Esta documentación
 prisma/               # Esquema, migraciones, seed
+prisma.config.ts      # Seed y rutas Prisma (carga .env)
 public/branding/      # Logos y assets PS1
 scripts/              # Utilidades de mantenimiento (incl. sync-prisma-schema)
 ```

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getChartYMax, mergeChartSeries } from "@/lib/chart-merge";
+import { getChartYDomain, getChartYMax, mergeChartSeries } from "@/lib/chart-merge";
 
 describe("mergeChartSeries", () => {
   it("merges user and friend series by date", () => {
@@ -40,6 +40,20 @@ describe("mergeChartSeries", () => {
     );
 
     expect(getChartYMax(merged, ["hours", "friend_a"])).toBe(22);
+  });
+
+  it("zooms y-domain around visible values", () => {
+    const domain = getChartYDomain(
+      [
+        { date: "2026-01-01", hours: 100 },
+        { date: "2026-01-02", hours: 102 },
+      ],
+      ["hours"],
+    );
+
+    expect(domain[0]).toBeGreaterThanOrEqual(0);
+    expect(domain[0]).toBeLessThan(100);
+    expect(domain[1]).toBeGreaterThan(102);
   });
 
   it("merges multiple friend series", () => {

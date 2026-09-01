@@ -2,11 +2,14 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { HoursRangeSelector } from "@/components/charts/HoursRangeSelector";
 import { SparklineChart } from "@/components/charts/SparklineChart";
 import { ProgressBadge } from "@/components/stats/ProgressBadge";
 import { GameCoverImage } from "@/components/ui/GameCoverImage";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { useRangedChartPoints } from "@/hooks/useHoursRange";
+import { MIN_SNAPSHOTS_FOR_CHART } from "@/lib/constants";
 import type { FeedResponse } from "@/lib/validators/api";
 
 interface HomeFeedProps {
@@ -103,7 +106,7 @@ export function HomeFeed({ initialData, userName }: HomeFeedProps) {
         </div>
       ) : (
         <section className="space-y-5">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-lg font-semibold text-steam-text sm:text-xl">
                 Últimos juegos jugados
@@ -112,12 +115,15 @@ export function HomeFeed({ initialData, userName }: HomeFeedProps) {
                 {data.games.length} de {data.totalRecent} con actividad reciente
               </p>
             </div>
-            <Link
-              href="/library"
-              className="text-sm font-medium text-steam-link hover:underline"
-            >
-              Ver biblioteca completa →
-            </Link>
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
+              <HoursRangeSelector />
+              <Link
+                href="/library"
+                className="text-sm font-medium text-steam-link hover:underline"
+              >
+                Ver biblioteca completa →
+              </Link>
+            </div>
           </div>
 
           <div className="grid gap-5 lg:grid-cols-2">
@@ -176,6 +182,9 @@ export function HomeFeed({ initialData, userName }: HomeFeedProps) {
 }
 
 function RecentGameCard({ game }: { game: FeedResponse["games"][number] }) {
+  const { points, progress } = useRangedChartPoints(game.sparkline);
+  const hasRangeChart = game.hasChartData && points.length >= MIN_SNAPSHOTS_FOR_CHART;
+
   return (
     <Link
       href={`/game/${game.appId}`}
@@ -210,9 +219,9 @@ function RecentGameCard({ game }: { game: FeedResponse["games"][number] }) {
         </div>
 
         <div className="space-y-3">
-          {game.hasChartData ? (
+          {hasRangeChart ? (
             <>
-              <ProgressBadge progress={game.progress} showRecent />
+              <ProgressBadge progress={progress} showRecent />
               <div className="rounded-lg border border-steam-border/20 bg-steam-bg-dark/40 p-2">
                 <SparklineChart data={game.sparkline} />
               </div>

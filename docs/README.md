@@ -13,6 +13,7 @@
 | [autenticacion.md](./autenticacion.md) | Login Steam OpenID, sesiones JWT, middleware |
 | [sincronizacion-y-escaneos.md](./sincronizacion-y-escaneos.md) | Sync de biblioteca, escaneos por juego, tiers, cron |
 | [biblioteca.md](./biblioteca.md) | Vista de juegos, filtros, preferencias, sparklines |
+| [selector-horas.md](./selector-horas.md) | Selector 7d / 1m / 6m en gráficos de horas |
 | [juego-detalle-y-amigos.md](./juego-detalle-y-amigos.md) | Página de juego, gráficos, comparación con amigos |
 | [amigos.md](./amigos.md) | Lista de amigos Steam, invitaciones, caché |
 | [perfil.md](./perfil.md) | Perfil editable y perfil público |
@@ -32,8 +33,9 @@
 |-----------------|-------------|
 | Orientación general / “¿dónde está X?” | `mapa-del-codigo.md` |
 | Login / sesiones | `autenticacion.md` |
-| Horas / gráficos / snapshots | `sincronizacion-y-escaneos.md`, `base-de-datos.md` |
+| Horas / gráficos / snapshots | `sincronizacion-y-escaneos.md`, `base-de-datos.md`, `selector-horas.md` |
 | Biblioteca o filtros | `biblioteca.md` |
+| Selector 7d / 1m / 6m en gráficos | `selector-horas.md` |
 | Comparación de amigos en un juego | `juego-detalle-y-amigos.md` |
 | Amigos Steam / invitaciones | `amigos.md` |
 | Perfil editable o público `/u/…` | `perfil.md` |

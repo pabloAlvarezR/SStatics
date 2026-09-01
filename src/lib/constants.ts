@@ -19,6 +19,17 @@ export const SYNC_COOLDOWN_MS = 5 * 60 * 1000;
 /** Mínimo de snapshots para mostrar gráfico de evolución */
 export const MIN_SNAPSHOTS_FOR_CHART = 2;
 
+/** Ventanas del selector de horas en gráficos y sparklines */
+export const HOURS_RANGE_DAYS = {
+  "7d": 7,
+  "1m": 30,
+  "6m": 180,
+} as const;
+
+export type HoursRangeId = keyof typeof HOURS_RANGE_DAYS;
+
+export const DEFAULT_HOURS_RANGE: HoursRangeId = "7d";
+
 /** Máximo de amigos superpuestos en el gráfico de un juego */
 export const MAX_FRIENDS_CHART_COMPARE = 5;
 

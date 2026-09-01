@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useCompleteFriendsComparison } from "@/hooks/useCompleteFriendsComparison";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { HoursRangeSelector } from "@/components/charts/HoursRangeSelector";
 import { PlaytimeChart } from "@/components/charts/PlaytimeChart";
 import {
   FriendsGameComparison,
@@ -178,7 +179,7 @@ export function GameDetailClient({
 
       <div className="steam-panel p-5 sm:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
+          <div className="min-w-0">
             <h2 className="text-lg font-semibold text-steam-text">Evolución de horas</h2>
             <p className="mt-1 text-sm text-steam-text-muted">
               {data.hasChartData
@@ -189,28 +190,31 @@ export function GameDetailClient({
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => syncMutation.mutate()}
-            disabled={!canScan || syncMutation.isPending}
-            className="steam-btn-primary flex min-h-11 flex-col items-center justify-center gap-0.5 px-5 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {syncMutation.isPending ? (
-              <span className="flex items-center gap-2">
-                <LoadingSpinner size="sm" />
-                Escaneando...
-              </span>
-            ) : (
-              <>
-                <span>Escanear este juego</span>
-                {scanSubtext && (
-                  <span className="text-[10px] font-normal leading-none opacity-80">
-                    {scanSubtext}
-                  </span>
-                )}
-              </>
-            )}
-          </button>
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:items-end">
+            <HoursRangeSelector />
+            <button
+              type="button"
+              onClick={() => syncMutation.mutate()}
+              disabled={!canScan || syncMutation.isPending}
+              className="steam-btn-primary flex min-h-11 flex-col items-center justify-center gap-0.5 px-5 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {syncMutation.isPending ? (
+                <span className="flex items-center gap-2">
+                  <LoadingSpinner size="sm" />
+                  Escaneando...
+                </span>
+              ) : (
+                <>
+                  <span>Escanear este juego</span>
+                  {scanSubtext && (
+                    <span className="text-[10px] font-normal leading-none opacity-80">
+                      {scanSubtext}
+                    </span>
+                  )}
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
         {syncMessage && (

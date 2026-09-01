@@ -64,3 +64,34 @@ export function getChartYMax(
   }
   return Math.ceil(max * 1.1) || 1;
 }
+
+/** Dominio Y ajustado al rango visible (evita líneas planas en ventanas cortas). */
+export function getChartYDomain(
+  rows: Record<string, string | number | null>[],
+  keys: string[],
+): [number, number] {
+  let min = Number.POSITIVE_INFINITY;
+  let max = Number.NEGATIVE_INFINITY;
+
+  for (const row of rows) {
+    for (const key of keys) {
+      const value = row[key];
+      if (typeof value === "number") {
+        if (value < min) min = value;
+        if (value > max) max = value;
+      }
+    }
+  }
+
+  if (!Number.isFinite(min) || !Number.isFinite(max)) {
+    return [0, 1];
+  }
+
+  const span = max - min;
+  const pad = Math.max(span * 0.15, 0.5);
+  const lo = Math.max(0, Math.floor((min - pad) * 10) / 10);
+  const hi = Math.ceil((max + pad) * 10) / 10;
+
+  if (hi <= lo) return [0, lo + 1];
+  return [lo, hi];
+}

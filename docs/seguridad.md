@@ -64,6 +64,16 @@ Configurados en `next.config.ts`:
 - `.env` y `.env.local` en `.gitignore`
 - Nunca commitear `STEAM_API_KEY`, `AUTH_SECRET`, `CRON_SECRET`, `DATABASE_URL`
 
+## Dependencias (auditoría npm)
+
+Las vulnerabilidades reportadas por `npm audit` se tratan subiendo paquetes directos y, si el padre no publica parche, con `overrides` en `package.json` (`brace-expansion`, `deepmerge-ts`, `js-yaml`, `jsdom`, `nanoid`, `postcss`, `sharp`).
+
+**No** se migra a Prisma 7/8 todavía: el cliente 8 está en RC y rompería el flujo actual de `schema.prisma` + `sync-prisma-schema.mjs`. Prisma queda en **6.19.3**.
+
+**No** se salta a Next.js 16: los avisos de Next se cubren con **15.5.25** (parches de App Router / Server Actions).
+
+Auth.js: `next-auth@5.0.0-beta.32` (`@auth/core` ≥ 0.41.3).
+
 ## Tier owner
 
 En producción, define `OWNER_STEAM_IDS` con tu Steam ID real. Evita depender solo del nombre de persona Steam (puede cambiar).

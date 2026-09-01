@@ -13,6 +13,7 @@
 - CTAs «Compartir mi semana» y «Replay del mes»
 - Top **8 juegos** con `lastPlayedAt` más reciente
 - Por juego: cover, horas, sparkline, progreso, horas 2 semanas
+- Selector de ventana de horas (`7d` / `1m` / `6m`) sobre las sparklines del listado
 - Bloque «Amigos esta semana» (delta 7d de amigos con perfil público)
 - Enlaces rápidos a biblioteca, amigos, leaderboard y replay
 
@@ -36,7 +37,7 @@ React Query: `queryKey: ["feed"]`, `staleTime: 60s`, `initialData` del SSR.
 | Horas 2 semanas Steam | Último sync (`playtime2weeksMinutes`) |
 | Racha / heatmap 30 días | `ActivityHeatmap` |
 | Crecimiento semanal % | Cálculo sobre snapshots |
-| Top 5 juegos | Con sparklines |
+| Top 5 juegos | Con sparklines y el mismo selector de ventana (`HoursRangeSelector`) |
 | Percentiles vs plataforma | Si ≥ `MIN_USERS_FOR_PERCENTILES` (5) usuarios |
 | Edad cuenta, días desde sync | Metadatos `User` |
 

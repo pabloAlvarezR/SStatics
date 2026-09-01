@@ -18,11 +18,14 @@
 ### Datos propios del usuario
 
 - Cover (`GameCoverImage`), horas totales, última sesión, puntos de datos
-- Progreso (`ProgressBadge`) si ≥2 snapshots
+- Progreso (`ProgressBadge`) si ≥ `MIN_SNAPSHOTS_FOR_CHART` (2) snapshots
 - Gráfico `PlaytimeChart` (Recharts) con historial de snapshots
+- Selector de ventana `HoursRangeSelector` (`7d` / `1m` / `6m` = 7 / 30 / 180 días) sobre el gráfico; también filtra series de amigos
 - Botón «Escanear este juego» (consume cuota diaria; ver `sincronizacion-y-escaneos.md`)
 
 React Query: `queryKey: ["game", appId]` con `initialData` del SSR.
+
+El eje Y del gráfico se ajusta a los valores visibles de la ventana (no siempre desde 0 h) para que cambios pequeños se vean.
 
 ### Remount al cambiar de juego
 

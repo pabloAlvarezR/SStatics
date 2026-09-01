@@ -51,6 +51,10 @@ Preferencias guardadas en `localStorage` (`useLibraryPreferences`). Los defaults
 
 Un juego muestra sparkline solo si tiene ≥ `MIN_SNAPSHOTS_FOR_CHART` (2) snapshots. El progreso se calcula en `src/lib/playtime-progress.ts`.
 
+El toolbar incluye `HoursRangeSelector` (`7d` / `1m` / `6m`). Recorta sparklines y el badge de progreso al periodo elegido. La preferencia se guarda en `localStorage` (`sstatics-hours-range`) y se comparte con el detalle del juego, el feed y el top 5.
+
+Filtro de puntos: `src/lib/hours-range.ts` (arrastra el último snapshot anterior al corte).
+
 ## Estado vacío (filtros)
 
 Si ningún juego coincide con los filtros, se muestra mensaje y un easter egg PS1: `Ps1PeekImage` con Silent Bomber. Ver `easter-eggs-ps1.md`.

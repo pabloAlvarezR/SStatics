@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import { SparklineChart } from "@/components/charts/SparklineChart";
+import { useRangedChartPoints } from "@/hooks/useHoursRange";
 import { ProgressBadge } from "@/components/stats/ProgressBadge";
 import { GameCoverImage } from "@/components/ui/GameCoverImage";
+import { MIN_SNAPSHOTS_FOR_CHART } from "@/lib/constants";
 import type { LibraryGame } from "@/lib/validators/api";
 
 interface LibraryListItemProps {
@@ -21,6 +25,9 @@ function formatLastPlayed(iso: string | null): string {
 }
 
 export function LibraryListItem({ game }: LibraryListItemProps) {
+  const { points, progress } = useRangedChartPoints(game.sparkline);
+  const hasRangeChart = game.hasChartData && points.length >= MIN_SNAPSHOTS_FOR_CHART;
+
   return (
     <Link
       href={`/game/${game.appId}`}
@@ -46,7 +53,7 @@ export function LibraryListItem({ game }: LibraryListItemProps) {
       </div>
 
       <div className="hidden w-20 shrink-0 sm:block">
-        {game.hasChartData ? (
+        {hasRangeChart ? (
           <SparklineChart data={game.sparkline} />
         ) : (
           <p className="text-[10px] text-steam-text-muted">—</p>
@@ -58,9 +65,9 @@ export function LibraryListItem({ game }: LibraryListItemProps) {
           {formatHours(game.totalHours)}
         </p>
         <p className="text-[10px] text-steam-text-muted">horas</p>
-        {game.hasChartData && game.progress && (
+        {hasRangeChart && progress && (
           <div className="mt-1 flex justify-end">
-            <ProgressBadge progress={game.progress} size="sm" />
+            <ProgressBadge progress={progress} size="sm" />
           </div>
         )}
         {!game.hasChartData && game.hours2weeks !== null && game.hours2weeks > 0 && (

@@ -97,3 +97,5 @@ Historial en `prisma/migrations/`.
 ## Seed
 
 `prisma/seed.ts` — datos de demo si aplica. Ejecutar con `npx prisma db seed`.
+
+El comando de seed está en `prisma.config.ts` (Prisma 6 ya no usa `package.json#prisma`). Ese archivo carga `.env` y `.env.local` porque, con config file, el CLI **no** inyecta variables de entorno solo.
