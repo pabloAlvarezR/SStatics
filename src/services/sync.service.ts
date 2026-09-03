@@ -6,8 +6,8 @@ import {
   SYNC_PARALLEL_UPSERTS,
 } from "@/lib/constants";
 import { mapConcurrent } from "@/lib/map-concurrent";
-import { getCaptureDate, purgeArtificialEntrySnapshots } from "@/repositories/snapshot.repository";
-import { getOwnedGames, SteamApiError } from "@/services/steam.service";
+import { getCaptureDate, purgeArtificialEntrySnapshots, purgeZeroPlaytimeSnapshots } from "@/repositories/snapshot.repository";
+import { filterPlayedOwnedGames, getOwnedGames, hasSteamPlaytime, SteamApiError } from "@/services/steam.service";
 import { getDailyScanUsage, recordGameScan } from "@/services/scan.service";
 import { isOwnerTier } from "@/lib/tier";
 
@@ -22,7 +22,8 @@ export class SyncError extends Error {
       | "CONFIG"
       | "SCAN_LIMIT"
       | "GAME_NOT_FOUND"
-      | "SYNC_SESSION_EXPIRED",
+      | "SYNC_SESSION_EXPIRED"
+      | "NO_PLAYTIME",
   ) {
     super(message);
     this.name = "SyncError";
@@ -53,7 +54,24 @@ export interface SyncLibraryResult {
 }
 
 async function fetchAndCacheGames(userId: string, steamId: string): Promise<SteamOwnedGame[]> {
-  const games = await getOwnedGames(steamId);
+  const owned = await getOwnedGames(steamId);
+  if (owned.length === 0) {
+    await clearSyncCache(userId);
+    throw new SyncError(
+      "No se encontraron juegos en tu biblioteca. Ve a Steam → Perfil → Editar perfil → Privacidad y pon «Detalles de los juegos» en Público.",
+      "PRIVATE_LIBRARY",
+    );
+  }
+
+  const games = filterPlayedOwnedGames(owned);
+  if (games.length === 0) {
+    await clearSyncCache(userId);
+    throw new SyncError(
+      "Ningún juego de tu biblioteca tiene horas de juego. SStatics solo guarda títulos que hayas jugado al menos un minuto.",
+      "NO_PLAYTIME",
+    );
+  }
+
   const expiresAt = new Date(Date.now() + SYNC_CACHE_TTL_MS);
 
   await prisma.steamLibrarySyncCache.upsert({
@@ -136,19 +154,12 @@ export async function syncUserLibrary(
 
   const games = await resolveGamesForChunk(userId, steamId, offset);
 
-  if (games.length === 0) {
-    await clearSyncCache(userId);
-    throw new SyncError(
-      "No se encontraron juegos en tu biblioteca. Ve a Steam → Perfil → Editar perfil → Privacidad y pon «Detalles de los juegos» en Público.",
-      "PRIVATE_LIBRARY",
-    );
-  }
-
   const syncedAt = new Date();
   const captureDate = getCaptureDate(syncedAt);
 
   if (offset === 0) {
     await purgeArtificialEntrySnapshots(userId);
+    await purgeZeroPlaytimeSnapshots(userId);
   }
 
   const slice = games.slice(offset, offset + limit);
@@ -195,6 +206,7 @@ async function upsertGameSnapshot(
   captureDate: string,
 ) {
   const playtimeMinutes = game.playtime_forever ?? 0;
+  if (!hasSteamPlaytime(playtimeMinutes)) return;
   const playtime2weeksMinutes = game.playtime_2weeks ?? null;
 
   await db.game.upsert({
@@ -286,6 +298,14 @@ export async function syncSingleGame(
     throw new SyncError(
       "Juego no encontrado en tu biblioteca de Steam o biblioteca privada.",
       "GAME_NOT_FOUND",
+    );
+  }
+
+  if (!hasSteamPlaytime(game.playtime_forever)) {
+    await purgeZeroPlaytimeSnapshots(userId, appId);
+    throw new SyncError(
+      "Este juego no tiene horas en Steam. Solo se escanean títulos que hayas jugado.",
+      "NO_PLAYTIME",
     );
   }
 

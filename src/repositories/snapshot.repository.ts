@@ -57,7 +57,27 @@ export async function purgeArtificialEntrySnapshots(
   return idsToDelete.length;
 }
 
-/** Último snapshot por juego — incluye juegos con 0 h (Prisma, compatible PG/SQLite) */
+/** Snapshots de juegos nunca jugados (`playtimeMinutes = 0`). No aportan historial. */
+export async function purgeZeroPlaytimeSnapshots(
+  userId: string,
+  appId?: number,
+): Promise<number> {
+  const result = await prisma.playtimeSnapshot.deleteMany({
+    where: {
+      userId,
+      playtimeMinutes: 0,
+      ...(appId != null ? { appId } : {}),
+    },
+  });
+  if (result.count > 0) {
+    console.log(
+      `[Snapshots] Eliminados ${result.count} de 0 h (nunca jugados) para userId ${userId}`,
+    );
+  }
+  return result.count;
+}
+
+/** Último snapshot por juego — Prisma, compatible PG/SQLite */
 export async function getLatestSnapshotsForLibrary(
   userId: string,
 ): Promise<LatestGameSnapshot[]> {

@@ -77,7 +77,7 @@ Referencia completa de contratos: [`api.md`](./api.md).
 
 | Archivo | Responsabilidad |
 |---------|-----------------|
-| `repositories/snapshot.repository.ts` | Consultas de `PlaytimeSnapshot` (último por juego, sparklines, deltas, totales) + purga de entradas artificiales 0 h |
+| `repositories/snapshot.repository.ts` | Consultas de `PlaytimeSnapshot` (último por juego, sparklines, deltas, totales) + purga de entradas artificiales y de 0 h |
 
 ## Cron: local vs producción
 

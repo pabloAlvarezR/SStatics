@@ -9,7 +9,7 @@
 ## Qué muestra
 
 - Resumen de estadísticas (`StatsOverview`)
-- Grid o lista de todos los juegos del usuario con:
+- Grid o lista de los juegos **con horas** del usuario con:
   - Horas totales
   - Sparkline de evolución (si ≥2 snapshots)
   - Badge de progreso (`ProgressBadge`)
@@ -31,6 +31,8 @@ Si el usuario no tiene snapshots (`needsSync`), la biblioteca dispara automátic
 | Sin jugar | `unplayed` |
 | Jugados 7d | `recent7d` |
 | Con gráfico | `hasChart` |
+
+El filtro «Sin jugar» solo verá residuos de sync antiguas: las nuevas **no importan juegos de 0 h**. Tras una sync, esos snapshots se borran.
 
 | Orden | Valor |
 |-------|-------|

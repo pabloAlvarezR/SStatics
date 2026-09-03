@@ -54,7 +54,9 @@ export async function POST(request: NextRequest) {
             ? 403
             : error.code === "SYNC_SESSION_EXPIRED"
               ? 409
-              : error.code === "CONFIG"
+              : error.code === "NO_PLAYTIME"
+            ? 422
+            : error.code === "CONFIG"
                 ? 500
                 : 400;
       console.error(`[Sync] Error (${error.code}):`, error.message);

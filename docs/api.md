@@ -16,7 +16,7 @@ Los contratos de respuesta están definidos en `src/lib/validators/api.ts` (Zod)
 
 | Método | Ruta | Descripción | Errores |
 |--------|------|-------------|---------|
-| POST | `/api/sync` | Sync biblioteca completa | 403 privada, 429 cooldown, 502 Steam |
+| POST | `/api/sync` | Sync biblioteca completa (solo juegos con horas) | 403 privada, 422 sin horas, 429 cooldown, 502 Steam |
 | GET | `/api/scans` | Uso diario de escaneos | — |
 | POST | `/api/games/[appId]/sync` | Escaneo de un juego | 429 límite, 404 no encontrado |
 

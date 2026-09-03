@@ -26,6 +26,7 @@ Steam solo expone horas totales actuales (`playtime_forever`). SStatics construy
 
 - Clave única: `userId + appId + captureDate` (`captureDate` = `YYYY-MM-DD`)
 - Re-sync el mismo día **actualiza** el snapshot, no duplica filas
+- **Solo juegos con horas:** `playtime_forever > 0`. Los nunca jugados no se upsertan; en el primer chunk se borran snapshots antiguos de 0 h (`purgeZeroPlaytimeSnapshots`)
 - **Juego nuevo detectado:** solo se guarda el snapshot del día actual con las horas reales de Steam (no se inventa un día previo a 0 h)
 - **Limpieza:** al sincronizar (biblioteca o escaneo), se eliminan snapshots artificiales antiguos (`ayer = 0 h` + día siguiente ya existente). Las lecturas de historial/sparklines también omiten ese punto, así el gráfico ya no lo muestra aunque aún no hayas sincronizado.
 - Escritura en chunks de 60 con upserts paralelos (`SYNC_CHUNK_SIZE`, `SYNC_PARALLEL_UPSERTS`)

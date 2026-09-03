@@ -83,6 +83,17 @@ export async function getOwnedGames(steamId: string): Promise<SteamOwnedGame[]> 
   return games as SteamOwnedGame[];
 }
 
+/** Steam da `playtime_forever` en minutos. 0 = nunca jugado; no merece snapshot. */
+export function hasSteamPlaytime(playtimeForever?: number | null): boolean {
+  return (playtimeForever ?? 0) > 0;
+}
+
+export function filterPlayedOwnedGames<T extends { playtime_forever?: number | null }>(
+  games: T[],
+): T[] {
+  return games.filter((game) => hasSteamPlaytime(game.playtime_forever));
+}
+
 export interface SteamGamePlaytime {
   playtimeMinutes: number;
   playtime2weeksMinutes: number | null;
@@ -135,7 +146,7 @@ export async function getOwnedGamePlaytime(
     if (!games?.length) return null;
 
     const game = games.find((g) => Number(g.appid) === appId);
-    if (!game || game.playtime_forever <= 0) return null;
+    if (!game || !hasSteamPlaytime(game.playtime_forever)) return null;
 
     return {
       playtimeMinutes: game.playtime_forever,

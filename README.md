@@ -2,9 +2,7 @@
 
 Estadísticas de Steam con gráficos de evolución de horas jugadas y estética clásica de Steam.
 
-Proyecto personal de [Pablo Álvarez](https://github.com/pabloAlvarezR). Lo publico para el portfolio y para quien quiera **leer el código o hacer un fork**. La instancia en producción es mía: no es un servicio abierto a inscripciones ni un producto que yo mantenga para terceros.
-
-Si te sirve de referencia o quieres trastear en tu máquina, adelante. Conserva el aviso de copyright ([MIT](#licencia)); con eso basta.
+Proyecto personal de [Pablo Álvarez](https://github.com/pabloAlvarezR). Si te sirve de referencia o quieres trastear en tu máquina, adelante. Conserva el aviso de copyright ([MIT](#licencia)).
 
 ## Características
 
@@ -88,7 +86,7 @@ Plantilla comentada: [`.env.local.example`](./.env.local.example).
 
 Steam solo expone las horas totales actuales (`playtime_forever`). SStatics guarda un **snapshot diario** por juego al sincronizar.
 
-- Se importan **todos** los juegos de tu biblioteca, incluidos los de 0 h.
+- Se importan solo juegos con **al menos 1 minuto** de juego. Los de 0 h no se guardan.
 - **Juego nuevo detectado:** el primer snapshot usa las horas reales de Steam ese día (sin un día previo artificial a 0 h).
 - Re-sincronizar el mismo día **actualiza** el snapshot de hoy, no duplica filas.
 - Los datos se conservan hasta **10 años** sin purga automática.
