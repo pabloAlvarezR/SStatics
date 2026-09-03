@@ -1,6 +1,10 @@
 # SStatics
 
-Estadísticas de Steam con gráficos de evolución de horas jugadas. Visualiza tu biblioteca con estética clásica de Steam.
+Estadísticas de Steam con gráficos de evolución de horas jugadas y estética clásica de Steam.
+
+Proyecto personal de [Pablo Álvarez](https://github.com/pabloAlvarezR). Lo publico para el portfolio y para quien quiera **leer el código o hacer un fork**. La instancia en producción es mía: no es un servicio abierto a inscripciones ni un producto que yo mantenga para terceros.
+
+Si te sirve de referencia o quieres trastear en tu máquina, adelante. Conserva el aviso de copyright ([MIT](#licencia)); con eso basta.
 
 ## Características
 
@@ -145,6 +149,12 @@ Guía paso a paso: [`docs/despliegue.md`](./docs/despliegue.md) (Vercel + Neon P
 
 Si tu biblioteca es privada, `GetOwnedGames` devuelve vacío. Ve a Steam → Perfil → Editar perfil → Privacidad → **Detalles de juegos: Público**.
 
-## Licencia
+## Licencia y contribuciones
 
-Privado — SStatics
+[MIT](./LICENSE) — © 2026 Pablo Álvarez.
+
+Puedes mirar, clonar, forkar y reutilizar el código. Si publicas un derivado, deja el aviso de copyright.
+
+No busco un flujo de issues ni pull requests: es un proyecto de una persona, no una comunidad. Un fork es la forma limpia de experimentar por tu cuenta.
+
+Steam, el logo de Steam y las carátulas de juegos son de Valve / sus respectivos autores; SStatics no está afiliado a Valve.
