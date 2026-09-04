@@ -21,6 +21,7 @@
 | [leaderboard.md](./leaderboard.md) | Ranking de amigos (delta 7d); global aplazado |
 | [admin-y-tiers.md](./admin-y-tiers.md) | Owner asigna tiers / unlimitedScans desde perfil |
 | [replay-y-share.md](./replay-y-share.md) | Replay mensual, share semanal, Open Graph |
+| [navegacion-loading.md](./navegacion-loading.md) | Overlay de carga al navegar (disco PS1) |
 | [easter-eggs-ps1.md](./easter-eggs-ps1.md) | Homenaje PS1: componentes, triggers, assets |
 | [api.md](./api.md) | Referencia de endpoints REST |
 | [base-de-datos.md](./base-de-datos.md) | Modelos Prisma, snapshots, dual provider (PG/SQLite) |
@@ -43,6 +44,7 @@
 | Leaderboard de amigos | `leaderboard.md` |
 | Roles / escaneos ilimitados (owner) | `admin-y-tiers.md`, `seguridad.md` |
 | Replay / share / OG | `replay-y-share.md` |
+| Overlay de carga al navegar | `navegacion-loading.md` |
 | UI nostálgica / footer / secretos | `easter-eggs-ps1.md` |
 | Nuevo endpoint | `api.md`, `arquitectura.md` |
 | Schema Prisma / Docker / SQLite local | `base-de-datos.md` |

@@ -61,6 +61,7 @@ Monta en todas las páginas:
 
 - `QueryProvider` — React Query
 - `CronInitializer` (`components/layout/`) — arranca cron de sync diario **solo en dev local**
+- `NavigationLoading` (`components/layout/`) — overlay de navegación (disco PS1); ver `navegacion-loading.md`. Va en `<Suspense>` por `useSearchParams`
 - `SteamHeader` — navegación
 - `Ps1Footer` + `Ps1EasterEggs` — homenaje PS1 (ver `easter-eggs-ps1.md`)
 - Clase `ps1-scanlines` en `<body>`

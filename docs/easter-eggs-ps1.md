@@ -11,10 +11,11 @@ Homenaje nostálgico a la era PlayStation 1 integrado en toda la web. Diseñado 
 | `Ps1Footer` | `src/components/ps1/Ps1Footer.tsx` | Mando en footer + leyenda parodia |
 | `Ps1PeekImage` | `src/components/ps1/Ps1PeekImage.tsx` | Imagen que asoma y se revela al hover/tap |
 | `Ps1FaceButtons` | `src/components/ps1/Ps1FaceButtons.tsx` | Símbolos △ ○ ✕ □ |
+| `Ps1LoadDisc` | `src/components/ps1/Ps1LoadDisc.tsx` | Disco de carga al navegar (UX, no secreto) |
 
-**Estilos:** `src/styles/globals.css` — clase `ps1-scanlines`, animaciones `ps1-boot-*`, `ps1-popup-in`.
+**Estilos:** `src/styles/globals.css` — clase `ps1-scanlines`, animaciones `ps1-boot-*`, `ps1-popup-in`, `ps1-load-*` (overlay de navegación).
 
-**Montaje global:** `src/app/layout.tsx` monta `Ps1Footer`, `Ps1EasterEggs` y `ps1-scanlines` en `<body>`.
+**Montaje global:** `src/app/layout.tsx` monta `Ps1Footer`, `Ps1EasterEggs`, `ps1-scanlines` y `NavigationLoading` (ver `navegacion-loading.md`).
 
 ## Assets
 
@@ -45,6 +46,10 @@ Todos en `public/branding/`:
 ### Scanlines
 
 - Overlay CRT muy sutil en todo el sitio (`body.ps1-scanlines`)
+
+### Overlay de navegación (`Ps1LoadDisc`)
+
+No es un easter egg: aparece al navegar entre páginas internas. Disco tipo CD PS1, ticks HUD, botones △○✕□ en secuencia y texto «NOW LOADING». Detalle de detección y timings: [`navegacion-loading.md`](./navegacion-loading.md).
 
 ### Landing
 

@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { Suspense } from "react";
+import { CronInitializer } from "@/components/layout/CronInitializer";
+import { NavigationLoading } from "@/components/layout/NavigationLoading";
 import { SteamHeader } from "@/components/layout/SteamHeader";
 import { Ps1EasterEggs } from "@/components/ps1/Ps1EasterEggs";
 import { Ps1Footer } from "@/components/ps1/Ps1Footer";
-import { CronInitializer } from "@/components/layout/CronInitializer";
 import { QueryProvider } from "@/lib/query-client";
 import "@/styles/globals.css";
 
@@ -31,9 +33,12 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className={inter.variable}>
-      <body className="font-sans ps1-scanlines">
+      <body className="ps1-scanlines font-sans">
         <QueryProvider>
           <CronInitializer />
+          <Suspense fallback={null}>
+            <NavigationLoading />
+          </Suspense>
           <SteamHeader />
           <div className="flex min-h-screen flex-col">
             <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-8">

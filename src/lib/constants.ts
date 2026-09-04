@@ -70,3 +70,12 @@ export const TIER_HISTORY_YEARS = {
 
 /** Años de historial visibles actualmente (sin restricción de tier) */
 export const VISIBLE_HISTORY_YEARS = STORAGE_RETENTION_YEARS;
+
+/** Delay antes de mostrar el overlay de navegación (evita flash si el prefetch es instantáneo) */
+export const NAV_LOADING_SHOW_DELAY_MS = 100;
+
+/** Tiempo mínimo visible del overlay una vez mostrado */
+export const NAV_LOADING_MIN_VISIBLE_MS = 280;
+
+/** Tope de seguridad: oculta el overlay si la navegación no termina */
+export const NAV_LOADING_MAX_VISIBLE_MS = 8000;

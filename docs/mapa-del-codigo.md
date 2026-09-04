@@ -69,6 +69,7 @@ Referencia completa de contratos: [`api.md`](./api.md).
 | `artificial-entry-snapshots.ts` | Detectar/omitir el snapshot artificial «ayer = 0 h» |
 | `leaderboard-rank.ts` | Ordenación pura del ranking de amigos |
 | `playtime-progress.ts` | Delta / tendencia entre puntos de gráfico |
+| `navigation-loading.ts` | Filtro de hrefs del overlay de navegación + `startNavigation` |
 | `sync-client.ts` | Sync por chunks desde el cliente |
 | `map-concurrent.ts` | `map` con concurrencia limitada |
 | `query-client.tsx` | Provider React Query |
@@ -92,7 +93,7 @@ En Vercel **no** corre node-cron dentro del layout.
 
 | Carpeta | Dominio |
 |---------|---------|
-| `components/layout/` | Header, cron initializer |
+| `components/layout/` | Header, overlay de navegación, cron initializer |
 | `components/library/` | Biblioteca, toolbar, tarjetas |
 | `components/game/` | Detalle de juego y comparación amigos |
 | `components/friends/` | Lista de amigos |
@@ -116,6 +117,7 @@ Cubren **lógica pura** en `lib/` y helpers exportados (p. ej. `minutesToHours`)
 | `hours-range.test.ts` | `lib/hours-range.ts` |
 | `artificial-entry-snapshots.test.ts` | `lib/artificial-entry-snapshots.ts` |
 | `playtime-progress.test.ts` | `lib/playtime-progress.ts` |
+| `navigation-loading.test.ts` | `lib/navigation-loading.ts` (`shouldTrackHref`) |
 | `steam-hours.test.ts` | `minutesToHours` en `steam.service.ts` |
 
 ## Docs por dominio
